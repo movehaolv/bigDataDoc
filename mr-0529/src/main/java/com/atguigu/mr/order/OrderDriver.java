@@ -14,7 +14,7 @@ public class OrderDriver {
 	public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
 
 		// 输入输出路径需要根据自己电脑上实际的输入输出路径设置
-		args = new String[] { "e:/input/inputorder", "e:/output5" };
+		args = new String[] { "other/GroupCompartor", "output910" };
 
 		// 1 获取配置信息
 		Configuration conf = new Configuration();	

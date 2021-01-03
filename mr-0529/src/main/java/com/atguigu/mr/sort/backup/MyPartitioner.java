@@ -10,7 +10,7 @@ import org.apache.hadoop.io.Text;
  */
 
 
-public class Partitioner extends org.apache.hadoop.mapreduce.Partitioner<FlowBean, Text> {
+public class MyPartitioner extends org.apache.hadoop.mapreduce.Partitioner<FlowBean, Text> {
 
 
     @Override

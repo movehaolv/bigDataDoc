@@ -22,10 +22,10 @@ public class OrderMapper extends Mapper<LongWritable, Text, OrderBean, NullWrita
 		String line = value.toString();
 		
 		// 2 切割
-		String[] fields = line.split("\t");
+		String[] fields = line.split(",");
 		
 		// 3 封装对象
-		k.setOrder_id(Integer.parseInt(fields[0]));
+		k.setOrderId(Integer.parseInt(fields[0]));
 		k.setPrice(Double.parseDouble(fields[2]));
 		
 		// 4 写出

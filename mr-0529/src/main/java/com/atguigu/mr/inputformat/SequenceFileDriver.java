@@ -11,15 +11,19 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
+
 public class SequenceFileDriver {
 
 	public static void main(String[] args) throws Exception, IOException {
 
 		// 输入输出路径需要根据自己电脑上实际的输入输出路径设置
-		args = new String[] { "e:/input/inputinputformat", "e:/output4" };
+		args = new String[] { "other", "output" };
 
 		// 1 获取job对象
 		Configuration conf = new Configuration();
+
+//		conf.set("mapreduce.input.fileinputformat.split.maxsize", "5"); // 没起作用
+
 		Job job = Job.getInstance(conf);
 
 		// 2 设置jar包存储位置、关联自定义的mapper和reducer

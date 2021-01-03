@@ -8,7 +8,7 @@ import org.apache.hadoop.io.WritableComparable;
 
 public class OrderBean implements WritableComparable<OrderBean>{
 
-	private int order_id;		// 订单id
+	private int orderId;		// 订单id
 	private double price;		// 价格
 	
 	public OrderBean() {
@@ -17,7 +17,7 @@ public class OrderBean implements WritableComparable<OrderBean>{
 	
 	public OrderBean(int order_id, double price) {
 		super();
-		this.order_id = order_id;
+		this.orderId = order_id;
 		this.price = price;
 	}
 
@@ -26,14 +26,14 @@ public class OrderBean implements WritableComparable<OrderBean>{
 	@Override
 	public void write(DataOutput out) throws IOException {
 		
-		out.writeInt(order_id);
+		out.writeInt(orderId);
 		out.writeDouble(price);
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
 
-		order_id = in.readInt();
+		orderId = in.readInt();
 		price = in.readDouble();
 	}
 
@@ -42,10 +42,10 @@ public class OrderBean implements WritableComparable<OrderBean>{
 		
 		// 先按照定id升序排序，如果相同 按照价格降序排序
 		int result;
-		
-		if (order_id > bean.getOrder_id()) {
+		System.out.println();
+		if (orderId > bean.getOrderId()) {
 			result = 1;
-		}else if (order_id < bean.getOrder_id()) {
+		}else if (orderId < bean.getOrderId()) {
 			result = -1;
 		}else {
 			
@@ -61,12 +61,12 @@ public class OrderBean implements WritableComparable<OrderBean>{
 		return result;
 	}
 
-	public int getOrder_id() {
-		return order_id;
+	public int getOrderId() {
+		return orderId;
 	}
 
-	public void setOrder_id(int order_id) {
-		this.order_id = order_id;
+	public void setOrderId(int orderId) {
+		this.orderId = orderId;
 	}
 
 	public double getPrice() {
@@ -79,6 +79,6 @@ public class OrderBean implements WritableComparable<OrderBean>{
 
 	@Override
 	public String toString() {
-		return order_id + "\t" + price;
+		return orderId + "\t" + price;
 	}
 }

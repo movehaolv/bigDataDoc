@@ -30,7 +30,7 @@ public class FlowDriver {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(FlowBean.class);
 
-        job.setPartitionerClass(Partitioner.class);
+        job.setPartitionerClass(MyPartitioner.class);
         job.setNumReduceTasks(5);
 
 

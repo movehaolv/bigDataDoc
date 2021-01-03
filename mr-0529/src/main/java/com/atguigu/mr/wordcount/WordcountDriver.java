@@ -19,7 +19,7 @@ public class WordcountDriver {
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 
-		args = new String[] { "src/main/java/com/atguigu/mr/wordcount/inputword", "output6" };
+		args = new String[] { "other/one.txt", "output" };
 
 		Configuration conf = new Configuration();
 //		// 开启map端输出压缩
@@ -45,10 +45,11 @@ public class WordcountDriver {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 
-		// 如果不设置InputFormat，它默认用的是TextInputFormat.class
-		// job.setInputFormatClass(CombineTextInputFormat.class);
-		// 虚拟存储切片最大值设置4m
-		// CombineTextInputFormat.setMaxInputSplitSize(job, 4194304);
+
+//		 如果不设置InputFormat，它默认用的是TextInputFormat.class
+		 job.setInputFormatClass(CombineTextInputFormat.class);
+//		 虚拟存储切片最大值设置4m
+		 CombineTextInputFormat.setMaxInputSplitSize(job, 4194304);
 
 		// 虚拟存储切片最大值设置20m
 		// CombineTextInputFormat.setMaxInputSplitSize(job, 20971520);
