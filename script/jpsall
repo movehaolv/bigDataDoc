@@ -1,0 +1,6 @@
+echo "================had01===================="
+ssh had01 "source /etc/profile && jps"
+echo "================had02===================="
+ssh had02 "source /etc/profile && jps"
+echo "================had03===================="
+ssh had03 "source /etc/profile && jps"
