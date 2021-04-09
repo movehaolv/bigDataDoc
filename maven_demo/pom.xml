@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.lh</groupId>
+  <artifactId>maven_demo</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <name>maven_demo</name>
+  <!-- FIXME change it to the project's website -->
+  <url>http://www.example.com</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- 编译代码使用的jdk版本 -->
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <!-- 运行代码使用的jdk版本 -->
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <!-- 自定义变量，表示版本号 -->
+    <junit.version>4.12</junit.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+
+
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>**/*.properties</include>
+          <include>**/*.xml</include>
+        </includes>
+        <!-- 主要用来替换项目中的资源文件（*.xml、*.properties）当中的${...}，比如${db.url} -->
+        <filtering>false</filtering>
+      </resource>
+      <resource>
+        <!-- src/main/resources 的文件放到 target/class/下 -->
+        <directory>src/main/resources</directory>
+
+      </resource>
+    </resources>
+  </build>
+</project>
