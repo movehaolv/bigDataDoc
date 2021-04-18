@@ -19,7 +19,7 @@ public class WordcountDriver {
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 
-		args = new String[] { "other/one.txt", "output" };
+		args = new String[] { "/jn.py", "/output" };
 
 		Configuration conf = new Configuration();
 //		// 开启map端输出压缩

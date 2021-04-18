@@ -15,8 +15,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class KVTextDriver {
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
-		
-		args = new String[]{"e:/input/inputkv", "e:/output1"};
+
+		args = new String[]{"/jn.py", "/output1"};
 		Configuration conf = new Configuration();
 		conf.set(KeyValueLineRecordReader.KEY_VALUE_SEPERATOR, " ");
 		

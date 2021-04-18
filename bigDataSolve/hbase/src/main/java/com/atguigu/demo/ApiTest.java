@@ -11,6 +11,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
@@ -20,10 +21,15 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.CompareFilter;
+import org.apache.hadoop.hbase.filter.RowFilter;
+import org.apache.hadoop.hbase.filter.SubstringComparator;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiTest {
     public static Configuration conf;
@@ -35,7 +41,8 @@ public class ApiTest {
     }
 
     public static boolean isTableExist(String tableName) throws IOException {
-        ConnectionFactory.createConnection(conf);
+//        Connection connection =ConnectionFactory.createConnection(conf);
+//        HBaseAdmin hBaseAdmin = (HBaseAdmin) connection.getAdmin();
         HBaseAdmin hBaseAdmin = new HBaseAdmin(conf);
         return hBaseAdmin.tableExists(tableName);
     }
@@ -68,9 +75,10 @@ public class ApiTest {
 
     public static void addRowData(String tableName, String rowKey, String columnFamily, String column, String value) throws IOException {
         // 向表中插入数据
+        ArrayList<Put> objects = new ArrayList<Put>();
         HTable hTable = new HTable(conf, tableName);
         Put put = new Put(Bytes.toBytes(rowKey));
-        put.add(Bytes.toBytes(columnFamily), Bytes.toBytes(column), Bytes.toBytes(value));
+        put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(column), Bytes.toBytes(value));
         hTable.put(put);
         hTable.close();
         System.out.println("插入数据成功 ");
@@ -91,16 +99,22 @@ public class ApiTest {
     public static void getAllRows(String tableName) throws IOException {
         // 获取所有数据
         HTable hTable = new HTable(conf, tableName);
-        Scan scan = new Scan();
+        // 1. 普通过滤
+        Scan scan = new Scan(Bytes.toBytes("1003_"), Bytes.toBytes("1003|"));
+
+        // 2 使用Filter
+//        Scan scan = new Scan();
+//        RowFilter rowFilter = new RowFilter(CompareFilter.CompareOp.NO_OP.EQUAL, new SubstringComparator("b_"));
+//        scan.setFilter(rowFilter);
 
         ResultScanner scanner = hTable.getScanner(scan);
         for(Result result: scanner){
             Cell[] cells = result.rawCells();
             for(Cell cell:cells){
-                System.out.println("行 键 " +  Bytes.toString(CellUtil.cloneRow(cell)));
-                System.out.println("列 族 " + Bytes.toString(CellUtil.cloneFamily(cell)));
-                System.out.println("列 " + Bytes.toString(CellUtil.cloneQualifier(cell)));
-                System.out.println("值 " + Bytes.toString(CellUtil.cloneValue(cell)));
+                System.out.print("行 键 " +  Bytes.toString(CellUtil.cloneRow(cell)) + "  ");
+                System.out.print("列 族 " + Bytes.toString(CellUtil.cloneFamily(cell)) + "  ");
+                System.out.print("列 " + Bytes.toString(CellUtil.cloneQualifier(cell)) + "  ");
+                System.out.println("值 " + Bytes.toString(CellUtil.cloneValue(cell)) + "  ");
             }
         }
     }
@@ -123,6 +137,7 @@ public class ApiTest {
     }
 
     public static void getRowQualifier(String tableName, String rowKey, String family, String qualifier) throws IOException {
+        // 获取某一行指定“列族:列”的数据
         HTable hTable = new HTable(conf, tableName);
         Get get = new Get(Bytes.toBytes(rowKey));
         get.addColumn(Bytes.toBytes(family), Bytes.toBytes(qualifier));
@@ -140,11 +155,12 @@ public class ApiTest {
 //        boolean isExist =  isTableExist("student");
 //        createTable("s1", "info1", "info2");
 //        deleteTable("s1");
-//        addRowData("s", "1005", "info", "joo", "aaa");
+//        addRowData("s", "1008", "info", "joo", "aaa");
 //        deleteMultiRow("s1","1002", "1001");
-//        getAllRows("s");
-//        getRow("s", "1002");
-        getRowQualifier("s", "1002", "info", "name");
+        getAllRows("weibo:content");
+//        getRow("weibo:content", "1002_1618742830942");
+//        getRowQualifier("s", "1002", "info", "name");
+
     }
 
 }
