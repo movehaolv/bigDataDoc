@@ -13,6 +13,8 @@ import org.apache.hadoop.mapreduce.lib.input.KeyValueLineRecordReader;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.v2.app.MRAppMaster;
+import org.apache.hadoop.yarn.exceptions.ApplicationMasterNotRegisteredException;
 
 import java.io.IOException;
 
@@ -25,7 +27,6 @@ import java.io.IOException;
 
 public class MyDriver {
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
-
         Configuration configuration = new Configuration();
 
         Job job = Job.getInstance(configuration);
@@ -45,7 +46,7 @@ public class MyDriver {
         //E:\wordcount\output下会生成part-m-00000 和 part-m-00001 两个文件
         CombineTextInputFormat.setMaxInputSplitSize(job, 1024*1024*150);
 
-        CombineTextInputFormat.setInputPaths(job, new Path("other"));
+        CombineTextInputFormat.setInputPaths(job, new Path("input"));
 
         FileOutputFormat.setOutputPath(job, new Path("output11"));
 

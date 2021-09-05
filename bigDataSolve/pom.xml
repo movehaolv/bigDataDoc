@@ -12,6 +12,9 @@
         <module>hbase</module>
         <module>kafka</module>
         <module>mr_0529</module>
+        <module>spark-core</module>
+        <module>scalaPrj</module>
+        <module>FlinkTutorial</module>
     </modules>
 
 <!--    <dependencyManagement>-->

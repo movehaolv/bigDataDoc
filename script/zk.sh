@@ -2,7 +2,7 @@
 
 case $1 in 
 "start"){
-	for i in lh@had01 lh@had02 lh@had03
+	for i in lh@node01 lh@node02 lh@node03
 	do
 		echo "============== $i ================"
 		ssh $i 'source /etc/profile && /opt/module/zookeeper-3.4.10/bin/zkServer.sh start'
@@ -12,7 +12,7 @@ case $1 in
 };;
 
 "stop"){
-	for i in lh@had01 lh@had02 lh@had03
+	for i in lh@node01 lh@node02 lh@node03
 	do
 		echo "============== $i ================"
 		ssh $i 'source /etc/profile && /opt/module/zookeeper-3.4.10/bin/zkServer.sh stop'
