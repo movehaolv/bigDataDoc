@@ -25,14 +25,15 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  * @Version: 1.0
  */
 public class StateTest4_FaultTolerance {
+    //  状态后端
     public static void main(String[] args) throws Exception{
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
         // 1. 状态后端配置
         env.setStateBackend( new MemoryStateBackend());
-        env.setStateBackend( new FsStateBackend(""));
-        env.setStateBackend( new RocksDBStateBackend(""));
+//        env.setStateBackend( new FsStateBackend(""));
+//        env.setStateBackend( new RocksDBStateBackend(""));
 
         // 2. 检查点配置
         env.enableCheckpointing(300);
@@ -52,7 +53,7 @@ public class StateTest4_FaultTolerance {
         env.setRestartStrategy(RestartStrategies.failureRateRestart(3, Time.minutes(10), Time.minutes(1)));
 
         // socket文本流
-        DataStream<String> inputStream = env.socketTextStream("localhost", 7777);
+        DataStream<String> inputStream = env.socketTextStream("node01", 7777);
 
         // 转换成SensorReading类型
         DataStream<SensorReading> dataStream = inputStream.map(line -> {

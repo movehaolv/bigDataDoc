@@ -14,37 +14,30 @@ import com.lh.wc.TT;
 
 public class Test {
     public static void main(String[] args) throws Exception {
-        P p = new P();
-        System.out.println(p);
+
+        Man man = new Man();
+        man.SetCnt();
+        System.out.println(man.count);
+        man.func();
 
     }
 
+    public static class Man{
+        int count;
 
-}
+        public Integer SetCnt(){
 
+            return count++;
+        }
 
-abstract class Animal{
+        public void func(){
+            System.out.println(111);
+        }
 
-    abstract void t1();
-    abstract void t2();
-
-    void f1(){}
-
-}
-
-abstract class Bird extends Animal{
-
-    @Override
-    void t1() {
-        System.out.println("a");
     }
+
 }
 
-class B extends Bird{
 
-    @Override
-    void t2() {
-    }
-}
 
 

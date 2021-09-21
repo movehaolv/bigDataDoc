@@ -42,7 +42,7 @@ public class StreamWordCount {
 
 
         // 从socket文本流读取数据
-        DataStream<String> inputDataStream = env.socketTextStream("had01", 8888);
+        DataStream<String> inputDataStream = env.socketTextStream("node01", 8888);
 
 
         // 基于数据流进行转换计算

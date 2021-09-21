@@ -15,6 +15,7 @@
         <module>spark-core</module>
         <module>scalaPrj</module>
         <module>FlinkTutorial</module>
+        <module>Algo</module>
     </modules>
 
 <!--    <dependencyManagement>-->

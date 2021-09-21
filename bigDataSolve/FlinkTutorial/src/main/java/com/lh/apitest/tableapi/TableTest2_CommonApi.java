@@ -54,7 +54,7 @@ public class TableTest2_CommonApi {
                 .build();
         StreamTableEnvironment blinkStreamTableEnv = StreamTableEnvironment.create(env, blinkStreamSettings);
 
-        // 1.4 基于Blink的批处理
+//         1.4 基于Blink的批处理
         EnvironmentSettings blinkBatchSettings = EnvironmentSettings.newInstance()
                 .useBlinkPlanner()
                 .inBatchMode()
@@ -63,7 +63,7 @@ public class TableTest2_CommonApi {
 
         // 2. 表的创建：连接外部系统，读取数据
         // 2.1 读取文件
-        String filePath = "D:\\Projects\\BigData\\FlinkTutorial\\src\\main\\resources\\sensor.txt";
+        String filePath = "D:\\workLv\\learn\\proj\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt";
         tableEnv.connect( new FileSystem().path(filePath))
                 .withFormat( new Csv())
                 .withSchema( new Schema()

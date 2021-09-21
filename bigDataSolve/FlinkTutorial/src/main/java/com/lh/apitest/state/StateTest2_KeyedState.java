@@ -28,7 +28,7 @@ public class StateTest2_KeyedState {
         env.setParallelism(1);
 
         // socket文本流
-        DataStream<String> inputStream = env.socketTextStream("localhost", 7777);
+        DataStream<String> inputStream = env.socketTextStream("node01", 7777);
 
         // 转换成SensorReading类型
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
@@ -48,7 +48,8 @@ public class StateTest2_KeyedState {
 
     // 自定义RichMapFunction
     public static class MyKeyCountMapper extends RichMapFunction<SensorReading, Integer>{
-        private ValueState<Integer> keyCountState;
+        private ValueState<Integer> keyCountState; //  getRuntimeContext().getState(new ValueStateDescriptor<Integer>
+        // ("key-count", Integer.class, 0));  getRuntimeContext这个运行上下文的方法要在open之后才能调用
 
         // 其它类型状态的声明
         private ListState<String> myListState;

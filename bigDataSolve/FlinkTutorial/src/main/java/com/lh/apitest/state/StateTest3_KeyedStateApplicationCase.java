@@ -33,7 +33,7 @@ public class StateTest3_KeyedStateApplicationCase {
         env.setParallelism(1);
 
         // socket文本流
-        DataStream<String> inputStream = env.socketTextStream("localhost", 7777);
+        DataStream<String> inputStream = env.socketTextStream("node01", 7777);
 
         // 转换成SensorReading类型
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
@@ -84,7 +84,7 @@ public class StateTest3_KeyedStateApplicationCase {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() throws Exception {  // 当nc -lk没有打开调用close方法
             lastTempState.clear();
         }
     }

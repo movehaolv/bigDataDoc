@@ -34,7 +34,7 @@ public class  TransformTest4_MultipleStreams {
         env.setParallelism(1);
 
         // 从文件读取数据
-        DataStream<String> inputStream = env.readTextFile("D:\\Projects\\BigData\\FlinkTutorial\\src\\main\\resources\\sensor.txt");
+        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
 
         // 转换成SensorReading
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
