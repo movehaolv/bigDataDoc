@@ -1,0 +1,34 @@
+1. 两个分区形成2个task，放入到2个executor执行，若资源只有一个产生1个executor，那么2个task会串行执行，或者并发执行
+2. Executor 是一个jvm
+3. 通常讲的excutor是指ExcuterBackup进程，内部的excutor是一个属性用于计算
+4. shuffleStage完成后写磁盘，resultStage读磁盘
+5. shuffleStage的最后一个RDD有几个分区则有几个任务，ResultStage的最后一个RDD(ShuffleRDD)有几个分区则有几个任务，两个任务加起来则为总的任务数
+
+
+systemctl start mariadb  #启动MariaDB
+systemctl stop mariadb  #停止MariaDB
+systemctl restart mariadb  #重启MariaDB
+systemctl enable mariadb  #设置开机启动
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
