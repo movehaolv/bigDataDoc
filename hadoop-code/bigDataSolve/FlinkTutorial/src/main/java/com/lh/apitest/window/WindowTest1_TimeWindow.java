@@ -45,10 +45,10 @@ public class WindowTest1_TimeWindow {
         env.setParallelism(1);
 
 //        // 从文件读取数据
-        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
+//        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
 
         // socket文本流
-//        DataStream<String> inputStream = env.socketTextStream("node01", 7777);
+        DataStream<String> inputStream = env.socketTextStream("node01", 7777);
 
         // 转换成SensorReading类型
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
@@ -61,7 +61,7 @@ public class WindowTest1_TimeWindow {
         // 开窗测试  , AggregateFunction 是增量，WindowFunction和ProcessWindowFunction是全量，像aggregate可以包含增量和全量aggregate
         // (AggregateFunction, WindowFunction)
 
-        // 1. 增量聚合函数
+        // 1. 增量聚合函数 AggregateFunction
         DataStream<Integer> resultStream = dataStream.keyBy("id")
 //                .countWindow(10, 2);
 //                .window(EventTimeSessionWindows.withGap(Time.minutes(1)));
@@ -82,15 +82,15 @@ public class WindowTest1_TimeWindow {
                     public Integer getResult(Integer accumulator) {
                         return accumulator;
                     }
-
+ 
                     @Override
                     public Integer merge(Integer a, Integer b) {
                          return a + b; // 主要用在sessionWindow，这里keyby之后都在一个分区里不涉及merge，防止意外写个a+b
                     }
                 });
 
-        resultStream.print();
-        // 2. 全窗口函数 process 和  apply都是全窗口函数
+//        resultStream.print();
+        // 2. 全窗口函数 WindowFunction
         SingleOutputStreamOperator<Tuple3<String, Long, Integer>> resultStream2 = dataStream.keyBy("id")
                 .timeWindow(Time.seconds(15))
 //                .process(new ProcessWindowFunction<SensorReading, Object, Tuple, TimeWindow>() {
@@ -113,13 +113,13 @@ public class WindowTest1_TimeWindow {
                 .timeWindow(Time.seconds(15))
 //                .trigger()
 //                .evictor()
-                .allowedLateness(Time.minutes(1))
+                .allowedLateness(Time.seconds(10)) //  一般用于事件时间
                 .sideOutputLateData(outputTag)
                 .sum("temperature");
 
         sumStream.getSideOutput(outputTag).print("late");
-
-        resultStream2.print();
+        sumStream.print("sumStream ");
+//        resultStream2.print();
 
 
         env.execute();

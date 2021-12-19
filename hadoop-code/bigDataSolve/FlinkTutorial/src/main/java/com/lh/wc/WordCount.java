@@ -31,8 +31,9 @@ public class WordCount {
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         // 从文件中读取数据
-        String inputPath = "D:\\workLv\\learn\\proj\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\hello.txt";
+        String inputPath = "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt";
         DataSet<String> inputDataSet = env.readTextFile(inputPath);
+
 
         // 对数据集进行处理，按空格分词展开，转换成(word, 1)二元组进行统计
         FlatMapOperator<String, Tuple2<String, Integer>> stringTuple2FlatMapOperator = inputDataSet.flatMap(new MyFlatMapper());
@@ -48,7 +49,7 @@ public class WordCount {
         @Override
         public void flatMap(String value, Collector<Tuple2<String, Integer>> out) throws Exception {
             // 按空格分词
-            String[] words = value.split(" ");
+            String[] words = value.split(",");
             // 遍历所有word，包成二元组输出
             for (String word : words) {
                 out.collect(new Tuple2<>(word, 1));

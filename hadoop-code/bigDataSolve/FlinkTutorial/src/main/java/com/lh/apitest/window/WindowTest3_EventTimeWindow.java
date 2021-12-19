@@ -30,7 +30,7 @@ import java.util.Collection;
 public class WindowTest3_EventTimeWindow {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//        env.setParallelism(1);
+        env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.getConfig().setAutoWatermarkInterval(100);
         // socket文本流
@@ -62,7 +62,7 @@ public class WindowTest3_EventTimeWindow {
         // 基于事件时间的开窗聚合，统计15秒内温度的最小值
         SingleOutputStreamOperator<SensorReading> minTempStream = dataStream.keyBy("id")
                 .timeWindow(Time.seconds(15))
-                .allowedLateness(Time.minutes(1))
+                .allowedLateness(Time.minutes(1))  // 在一分钟内还有之前窗口的数据则继续输出，1分钟之后则输出到侧输出流
                 .sideOutputLateData(outputTag)
                 .minBy("temperature");
 
@@ -70,5 +70,18 @@ public class WindowTest3_EventTimeWindow {
         minTempStream.getSideOutput(outputTag).print("late");
 
         env.execute();
+
+        /**
+         * 输入 WM-2, timeWindow(Time.seconds(15))
+         * sensor_1,1547718199,35.8,2019-01-17 09:43:19
+         * sensor_1,1547718209,32.8,2019-01-17 09:43:2
+         * sensor_1,1547718212,37.1,2019-01-17 09:43:32     minTemp> SensorReading{id='sensor_1', timestamp=1547718209, temperature=32.8}
+         * sensor_1,1547718199,35.8,2019-01-17 09:43:19     minTemp> SensorReading{id='sensor_1', timestamp=1547718209, temperature=32.8}
+         * sensor_1,1547718272,37.1,2019-01-17 09:43:32     minTemp> SensorReading{id='sensor_1', timestamp=1547718212, temperature=37.1}
+         * sensor_1,1547718209,32.8,2019-01-17 09:43:2      late> SensorReading{id='sensor_1', timestamp=1547718209, temperature=32.8}
+         *
+         *
+         *
+         */
     }
 }

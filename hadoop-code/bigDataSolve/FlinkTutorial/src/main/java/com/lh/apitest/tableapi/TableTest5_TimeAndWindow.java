@@ -12,7 +12,6 @@ import com.lh.apitest.beans.SensorReading;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -40,12 +39,6 @@ public class TableTest5_TimeAndWindow {
         // 2. 读入文件数据，得到DataStream
         DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
 
-
-//        SingleOutputStreamOperator<SensorReading> dataStream = inputStream.map(line -> {
-//            String[] fields = line.split(",");
-//            return new SensorReading(fields[0], new Long(fields[1]), new Double(fields[2]));
-//        });
-
         // 3. 转换成POJO
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
             String[] fields = line.split(",");
@@ -58,13 +51,9 @@ public class TableTest5_TimeAndWindow {
                     }
                 });
 
-        dataStream.print();
-
         // 4. 将流转换成表，定义时间特性
 //        Table dataTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp, pt.proctime");
-        Table dataTable =
-                tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp, rt.rowtime"); //
-        // http://t.zoukankan.com/ywjfx-p-14280075.html ; rt.rowtime 必须在指定的数据流中分配时间戳和watermark
+        Table dataTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp, rt.rowtime");
 
         tableEnv.createTemporaryView("sensor", dataTable);
 
@@ -81,7 +70,7 @@ public class TableTest5_TimeAndWindow {
 
         // 5.2 Over Window
         // table API
-        Table overResult = dataTable.window(Over.partitionBy("  id").orderBy("rt").preceding("2.rows").as("ow"))
+        Table overResult = dataTable.window(Over.partitionBy("id").orderBy("rt").preceding("2.rows").as("ow"))
                 .select("id, rt, id.count over ow, temp.avg over ow");
 
         // SQL
@@ -89,13 +78,20 @@ public class TableTest5_TimeAndWindow {
                 " from sensor " +
                 " window ow as (partition by id order by rt rows between 2 preceding and current row)");
 
-        dataTable.printSchema();
-        tableEnv.toAppendStream(resultTable, Row.class).print("resultTable");
-        tableEnv.toRetractStream(resultSqlTable, Row.class).print("resultSqlTable");
-
-        tableEnv.toAppendStream(overResult, Row.class).print("overResult");
-        tableEnv.toRetractStream(overSqlResult, Row.class).print("overSqlResult");
-
+//        dataTable.printSchema();
+//        tableEnv.toAppendStream(resultTable, Row.class).print("result");
+//        tableEnv.toRetractStream(resultSqlTable, Row.class).print("sql");
+        tableEnv.toAppendStream(overResult, Row.class).print("result");
+        tableEnv.toRetractStream(overSqlResult, Row.class).print("sql");
+        /**
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:19,1,35.8)
+         * overSqlResult> (true,sensor_6,2019-01-17T09:43:21,1,15.4)
+         * overSqlResult> (true,sensor_7,2019-01-17T09:43:22,1,6.7)
+         * overSqlResult> (true,sensor_10,2019-01-17T09:43:25,1,38.1)
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:27,2,36.05)
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:29,3,34.96666666666666)
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:32,3,35.4)
+         */
         env.execute();
     }
 }

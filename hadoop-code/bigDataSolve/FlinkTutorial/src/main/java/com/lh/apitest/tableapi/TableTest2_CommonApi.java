@@ -37,7 +37,7 @@ public class TableTest2_CommonApi {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env); // 使用了OldPlanner <==> 1.1 基于老版本planner的流处理
 
         // 1.1 基于老版本planner的流处理
         EnvironmentSettings oldStreamSettings = EnvironmentSettings.newInstance()
@@ -67,6 +67,8 @@ public class TableTest2_CommonApi {
         // 2. 表的创建：连接外部系统，读取数据
         // 2.1 读取文件
         String filePath = "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt";
+
+
 
         tableEnv.connect( new FileSystem().path(filePath))
                 .withFormat( new Csv())

@@ -41,7 +41,7 @@ public class UdfTest3_AggregateFunction {
 
         // 3. 将流转换成表
         Table sensorTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp");
-
+        sensorTable.printSchema();
         // 4. 自定义聚合函数，求当前传感器的平均温度值
         // 4.1 table API
         AvgTemp avgTemp = new AvgTemp();

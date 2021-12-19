@@ -36,7 +36,7 @@ public class ApiTest {
     static{
 //使用 HBaseConfiguration 的单例方法实例化
         conf = HBaseConfiguration.create();
-        conf.set("hbase.zookeeper.quorum", "192.168.17.129");
+        conf.set("hbase.zookeeper.quorum", "192.168.17.133");
         conf.set("hbase.zookeeper.property.clientPort", "2181");
     }
 
@@ -99,10 +99,19 @@ public class ApiTest {
     public static void getAllRows(String tableName) throws IOException {
         // 获取所有数据
         HTable hTable = new HTable(conf, tableName);
+        Scan scan = new Scan();
         // 1. 普通过滤
-        Scan scan = new Scan(Bytes.toBytes("1003_"), Bytes.toBytes("1003|"));
+//        Scan scan = new Scan(Bytes.toBytes("1003_"), Bytes.toBytes("1003|"));
 
         // 2 使用Filter
+        /**
+         * BinaryComparator  按字节索引顺序比较指定字节数组，采用Bytes.compareTo(byte[])
+         * BinaryPrefixComparator 跟前面相同，只是比较左端的数据是否相同
+         * NullComparator 判断给定的是否为空
+         * BitComparator 按位比较 a BitwiseOp class 做异或，与，并操作
+         * RegexStringComparator 提供一个正则的比较器，仅支持 EQUAL 和非EQUAL
+         * SubstringComparator 判断提供的子串是否出现在table的value中。
+         */
 //        Scan scan = new Scan();
 //        RowFilter rowFilter = new RowFilter(CompareFilter.CompareOp.NO_OP.EQUAL, new SubstringComparator("b_"));
 //        scan.setFilter(rowFilter);
@@ -152,12 +161,13 @@ public class ApiTest {
     }
 
     public static void main(String[] args) throws IOException {
-//        boolean isExist =  isTableExist("student");
+//        boolean isExist =  isTableExist("test");
 //        createTable("s1", "info1", "info2");
 //        deleteTable("s1");
-//        addRowData("s", "1008", "info", "joo", "aaa");
+//        addRowData("s1", "1008", "info1", "joo", "aaa");
+//        addRowData("s1", "1008", "info2", "boo", "bbb");
 //        deleteMultiRow("s1","1002", "1001");
-        getAllRows("weibo:content");
+        getAllRows("s1");
 //        getRow("weibo:content", "1002_1618742830942");
 //        getRowQualifier("s", "1002", "info", "name");
 

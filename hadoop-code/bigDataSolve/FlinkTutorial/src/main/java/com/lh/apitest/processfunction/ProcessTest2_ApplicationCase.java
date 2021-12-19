@@ -18,6 +18,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
+import java.net.URL;
+
 /**
  * @ClassName: ProcessTest2_ApplicationCase
  * @Description: 监控温度传感器的温度值，如果温度值在 10 秒钟之内(processing time)
@@ -31,7 +33,9 @@ public class ProcessTest2_ApplicationCase {
         env.setParallelism(1);
 
         // socket文本流
-        DataStream<String> inputStream = env.socketTextStream("node01", 7777);
+        URL resource = ProcessTest2_ApplicationCase.class.getResource("/sensor.txt");
+        DataStream<String> inputStream = env.readTextFile(resource.getPath());
+//        DataStream<String> inputStream = env.socketTextStream("node01", 7777);
 
         // 转换成SensorReading类型
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
@@ -71,18 +75,18 @@ public class ProcessTest2_ApplicationCase {
             // 取出状态
             Double lastTemp = lastTempState.value();
             Long timerTs = timerTsState.value();
-            System.out.println("当前温度 " + value.getTemperature() + "上次温度 " + lastTemp );
+            System.out.println("当前温度 " + value.getTemperature() + "上次温度 " + lastTemp  + " WM " + ctx.timerService().currentWatermark());
             // 如果温度上升并且没有定时器，注册10秒后的定时器，开始等待
             if( value.getTemperature() >= lastTemp && timerTs == null ){
                 // 计算出定时器时间戳
-                System.out.println("温度上升 当前温度 " + value.getTemperature() + "上次温度 " + lastTemp );
+//                System.out.println("温度上升 当前温度 " + value.getTemperature() + "上次温度 " + lastTemp );
                 Long ts = ctx.timerService().currentProcessingTime() + interval * 1000L;
                 ctx.timerService().registerProcessingTimeTimer(ts);
                 timerTsState.update(ts);
             }
             // 如果温度下降，那么删除定时器
             else if( value.getTemperature() < lastTemp && timerTs != null ){
-                System.out.println("温度下降 当前温度 " + value.getTemperature() + "上次温度 " + lastTemp );
+//                System.out.println("温度下降 当前温度 " + value.getTemperature() + "上次温度 " + lastTemp );
                 ctx.timerService().deleteProcessingTimeTimer(timerTs);
                 timerTsState.clear();
             }

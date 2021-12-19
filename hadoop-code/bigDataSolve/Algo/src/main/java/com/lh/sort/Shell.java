@@ -1,6 +1,6 @@
 package com.lh.sort;
 
-public class Shell {
+public class   Shell {
     /*
        对数组a中的元素进行排序
     */
