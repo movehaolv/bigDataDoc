@@ -1,0 +1,6 @@
+### HADOOP
+
+##### HDFS
+
+- hdfs适合一次写入，多次读出的场景，无法进行修改。如果要修改需要下载下来在上次，可以通过hdfs dfs -appendToFile file1 /file2方式追加数据
+

@@ -15,7 +15,7 @@ public class NLineDriver {
 
 	public static void main(String[] args) throws IllegalArgumentException, IOException, ClassNotFoundException, InterruptedException {
 		// 输入输出路径需要根据自己电脑上实际的输入输出路径设置
-		args = new String[] { "e:/input/inputword", "e:/output1" };
+		args = new String[] { "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com\\atguigu\\mr\\nline\\NLineReducer.java", "output1" };
 
 		// 1 获取job对象
 		Configuration configuration = new Configuration();
@@ -30,15 +30,15 @@ public class NLineDriver {
 		// 2设置jar包位置，关联mapper和reducer
 		job.setJarByClass(NLineDriver.class);
 		job.setMapperClass(NLineMapper.class);
-		job.setReducerClass(NLineReducer.class);
+//		job.setReducerClass(NLineReducer.class);
 
 		// 3设置map输出kv类型
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(IntWritable.class);
 
 		// 4设置最终输出kv类型
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(IntWritable.class);
+//		job.setOutputKeyClass(Text.class);
+//		job.setOutputValueClass(IntWritable.class);
 
 		// 5设置输入输出数据路径
 		FileInputFormat.setInputPaths(job, new Path(args[0]));

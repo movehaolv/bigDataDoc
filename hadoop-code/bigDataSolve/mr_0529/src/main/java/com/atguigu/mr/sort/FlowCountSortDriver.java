@@ -14,7 +14,8 @@ public class FlowCountSortDriver {
 	public static void main(String[] args) throws IllegalArgumentException, IOException, ClassNotFoundException, InterruptedException {
 
 		// 输入输出路径需要根据自己电脑上实际的输入输出路径设置
-		args = new String[] { "e:/output1", "e:/output2" };
+		args = new String[] { "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com" +
+				"\\atguigu\\mr\\sort\\input.txt", "output555" };
 
 		// 1 获取配置信息，或者job对象实例
 		Configuration configuration = new Configuration();
@@ -37,7 +38,7 @@ public class FlowCountSortDriver {
 
 		// 关联分区
 		job.setPartitionerClass(ProvincePartitioner.class);
-		job.setNumReduceTasks(5);
+		job.setNumReduceTasks(1);
 		
 		// 5 指定job的输入原始文件所在目录
 		FileInputFormat.setInputPaths(job, new Path(args[0]));

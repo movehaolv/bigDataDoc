@@ -17,6 +17,8 @@ public class OrderGroupingComparator extends WritableComparator{
 		OrderBean bBean = (OrderBean) b;
 		System.out.println(aBean + " /////////////////////   " + bBean);
 		int result;
+		// 两种方式都行
+
 		if(aBean.getOrderId() == bBean.getOrderId()){
 			System.out.println(aBean + " /////////////////////++++++++++++++++++++   " + bBean);
 			result = 0;

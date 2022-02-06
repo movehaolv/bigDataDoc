@@ -18,7 +18,7 @@ object Spark01_WordCount {
 
         // 1. 读取文件，获取一行一行的数据
         //    hello world
-        val lines: RDD[String] = sc.textFile("D:\\workLv\\learn\\proj\\bigDataSolve\\spark-core\\src\\main\\java\\com\\lh\\util")
+        val lines: RDD[String] = sc.textFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\spark-core\\src\\main\\java\\com\\lh\\core\\wc\\Spark01_WordCount.scala")
         println(lines.collect().size)
         // 2. 将一行数据进行拆分，形成一个一个的单词（分词）
         //    扁平化：将整体拆分成个体的操作

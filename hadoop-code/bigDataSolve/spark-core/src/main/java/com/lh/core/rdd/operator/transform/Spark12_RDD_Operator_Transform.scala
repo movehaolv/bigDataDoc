@@ -13,9 +13,9 @@ object Spark12_RDD_Operator_Transform {
         // TODO 算子 - sortBy
         val rdd = sc.makeRDD(List(6,2,4,5,3,1), 2)
 
-        val newRDD: RDD[Int] = rdd.sortBy(num=>num)
+        val newRDD: RDD[Int] = rdd.sortBy(num=>num,false, 4)
 
-        newRDD.saveAsTextFile("output")
+        newRDD.saveAsTextFile("output1")
 
 
 

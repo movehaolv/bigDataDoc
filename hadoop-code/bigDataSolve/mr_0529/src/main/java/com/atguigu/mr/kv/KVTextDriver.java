@@ -16,7 +16,7 @@ public class KVTextDriver {
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 
-		args = new String[]{"/jn.py", "/output1"};
+		args = new String[]{"D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com\\atguigu\\mr\\kv\\input.txt", "output1"};
 		Configuration conf = new Configuration();
 		conf.set(KeyValueLineRecordReader.KEY_VALUE_SEPERATOR, " ");
 		

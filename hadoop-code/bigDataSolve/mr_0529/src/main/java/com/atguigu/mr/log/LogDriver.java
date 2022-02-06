@@ -15,7 +15,8 @@ public class LogDriver {
 	public static void main(String[] args) throws RuntimeException, Exception {
 
 		// 输入输出路径需要根据自己电脑上实际的输入输出路径设置
-		args = new String[] { "e:/input/inputlog", "e:/output1" };
+		args = new String[] { "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com" +
+				"\\atguigu\\mr\\log\\web.log", "output5" };
 
 		// 1 获取job信息
 		Configuration conf = new Configuration();

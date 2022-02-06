@@ -18,15 +18,15 @@ object Spark19_RDD_Operator_Transform {
         ),2)
 
         // combineByKey : 方法需要三个参数
-        // 第一个参数表示：将相同key的第一个数据进行结构的转换，实现操作
+        // 第一个参数表示：将相同key的第一个数据进行结构的转换，实现操作，每个分区都会执行
         // 第二个参数表示：分区内的计算规则
         // 第三个参数表示：分区间的计算规则
         val newRDD : RDD[(String, (Int, Int))] = rdd.combineByKey(
-            v => (v, 1),
-            ( t:(Int, Int), v ) => {
-                (t._1 + v, t._2 + 1)
+            v => (v, 1),         //  key为a分区1的第一个值为 (1,1)
+            ( t:(Int, Int), v ) => {   // key为a分区1，此时第一次计算t为(1,1) v为2
+                (t._1 + v, t._2 + 1)  // key为a分区1，（3，2）
             },
-            (t1:(Int, Int), t2:(Int, Int)) => {
+            (t1:(Int, Int), t2:(Int, Int)) => { // key为a t1:(3,2) t2:(6,1)
                 (t1._1 + t2._1, t1._2 + t2._2)
             }
         )

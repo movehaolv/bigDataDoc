@@ -15,6 +15,7 @@ object Spark06_RDD_Operator_Action {
         rdd.collect().foreach(println)
         println("******************")
         // foreach 其实是Executor端内存数据打印
+
         rdd.foreach(println)
 
         // 算子 ： Operator（操作）
@@ -24,7 +25,9 @@ object Spark06_RDD_Operator_Action {
         //         为了区分不同的处理效果，所以将RDD的方法称之为算子。
         //        RDD的方法外部的操作都是在Driver端执行的，而方法内部的逻辑代码是在Executor端执行。
 
+
         sc.stop()
+
 
     }
 }

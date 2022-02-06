@@ -14,7 +14,8 @@ public class OrderDriver {
 	public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
 
 		// 输入输出路径需要根据自己电脑上实际的输入输出路径设置
-		args = new String[] { "other/GroupCompartor", "output910" };
+		args = new String[] { "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com" +
+				"\\atguigu\\mr\\order\\input.txt", "output1" };
 
 		// 1 获取配置信息
 		Configuration conf = new Configuration();	
@@ -40,7 +41,7 @@ public class OrderDriver {
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
 		// 8 设置reduce端的分组
-		job.setGroupingComparatorClass(OrderGroupingComparator.class);
+//		job.setGroupingComparatorClass(OrderGroupingComparator.class);
 
 		// 7 提交
 		boolean result = job.waitForCompletion(true);

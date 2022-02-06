@@ -42,7 +42,7 @@ public class FlowBean implements WritableComparable<FlowBean>{
 		sumFlow = in.readLong();
 	}
 
-	// 比较
+	// 比较 降序
 	@Override
 	public int compareTo(FlowBean bean) {
 		

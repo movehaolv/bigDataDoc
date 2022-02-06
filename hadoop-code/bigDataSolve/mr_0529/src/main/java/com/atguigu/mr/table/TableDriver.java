@@ -14,7 +14,8 @@ public class TableDriver {
 
 	public static void main(String[] args) throws Exception, IOException, InterruptedException {
 		// 0 根据自己电脑路径重新配置
-		args = new String[] { "e:/input/inputtable", "e:/output1" };
+		args = new String[] { "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com" +
+				"\\atguigu\\mr\\table\\input", "output5" };
 
 		// 1 获取配置信息，或者job对象实例
 		Configuration configuration = new Configuration();

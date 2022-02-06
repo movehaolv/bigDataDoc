@@ -18,10 +18,9 @@ object Spark13_RDD_Operator_Transform {
         val rdd1 = sc.makeRDD(List(1,2,3,4))
         val rdd2 = sc.makeRDD(List(3,4,5,6))
         val rdd7 = sc.makeRDD(List("3","4","5","6"))
-
         // 交集 : 【3，4】
         val rdd3: RDD[Int] = rdd1.intersection(rdd2)
-        //val rdd8 = rdd1.intersection(rdd7)
+//        val rdd8 = rdd1.intersection(rdd7)
         println(rdd3.collect().mkString(","))
 
         // 并集 : 【1，2，3，4，3，4，5，6】

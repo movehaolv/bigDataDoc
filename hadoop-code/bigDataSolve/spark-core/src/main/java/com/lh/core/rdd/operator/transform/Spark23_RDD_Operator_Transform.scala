@@ -13,18 +13,18 @@ object Spark23_RDD_Operator_Transform {
         // TODO 算子 - (Key - Value类型)
 
         val rdd1 = sc.makeRDD(List(
-            ("a", 1), ("b", 2)//, ("c", 3)
+            ("a", 1), ("b", 2), ("c", 3)
         ))
 
         val rdd2 = sc.makeRDD(List(
-            ("a", 4), ("b", 5),("c", 6),("c", 7)
+            ("a", 1), ("c", 2),("c", 3)
         ))
 
         // cogroup : connect + group (分组，连接)
         val cgRDD: RDD[(String, (Iterable[Int], Iterable[Int]))] = rdd1.cogroup(rdd2)
 
         cgRDD.collect().foreach(println)
-
+        rdd1.join(rdd2).collect().foreach(println)
 
         sc.stop()
 

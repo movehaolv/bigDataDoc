@@ -20,7 +20,6 @@ object Spark16_RDD_Operator_Transform {
         //              元组中的第一个元素就是key，
         //              元组中的第二个元素就是相同key的value的集合
         val groupRDD: RDD[(String, Iterable[Int])] = rdd.groupByKey()
-
         groupRDD.collect().foreach(println)
 
         val groupRDD1: RDD[(String, Iterable[(String, Int)])] = rdd.groupBy(_._1)

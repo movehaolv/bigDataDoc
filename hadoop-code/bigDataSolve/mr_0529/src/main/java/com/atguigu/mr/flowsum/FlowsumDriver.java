@@ -13,7 +13,7 @@ public class FlowsumDriver {
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 		
-		args = new String[]{ "src/main/java/com/atguigu/mr/flowsum/phone_data.txt", "output5" };
+		args = new String[]{ "mr_0529/src/main/java/com/atguigu/mr/flowsum/phone_data.txt", "output55" };
 		
 		Configuration conf = new Configuration();
 		// 1 获取job对象
@@ -34,7 +34,7 @@ public class FlowsumDriver {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(FlowBean.class);
 		
-		job.setPartitionerClass(ProvincePartitioner.class);
+//		job.setPartitionerClass(ProvincePartitioner.class);
 //		
 		job.setNumReduceTasks(1);
 //		
