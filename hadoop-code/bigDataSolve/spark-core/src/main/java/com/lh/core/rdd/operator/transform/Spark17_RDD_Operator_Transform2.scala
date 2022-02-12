@@ -21,7 +21,7 @@ object Spark17_RDD_Operator_Transform2 {
 
         // 如果聚合计算时，分区内和分区间计算规则相同，spark提供了简化的方法
         rdd.foldByKey(0)(_+_).collect.foreach(println)
-
+        // CO
 
         sc.stop()
 
