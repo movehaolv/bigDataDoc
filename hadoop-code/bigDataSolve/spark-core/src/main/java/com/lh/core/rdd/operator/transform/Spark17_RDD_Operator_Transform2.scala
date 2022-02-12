@@ -11,7 +11,7 @@ object Spark17_RDD_Operator_Transform2 {
         val sc = new SparkContext(sparkConf)
 
         // TODO 算子 - (Key - Value类型)
-
+        // aa
         val rdd = sc.makeRDD(List(
             ("a", 1), ("a", 2), ("b", 3),
             ("b", 4), ("b", 5), ("a", 6)
