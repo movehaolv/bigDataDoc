@@ -28,13 +28,14 @@ object Spark17_RDD_Operator_Transform {
 
         // math.min(x, y)
         // math.max(x, y)
-        rdd.aggregateByKey(0)(
-            (x, y) => math.max(x, y),
-            (x, y) => x + y
-        ).collect.foreach(println)
+//        rdd.aggregateByKey(0)(
+//            (x, y) => math.max(x, y),
+//            (x, y) => x + y
+//        ).collect.foreach(println)
 
-
-
+        val dataRDD1 = sc.makeRDD(List(("a",1),("b",2),("c",3),("a",4),("b",5),("c",6)),2)
+        val dataRDD2 = dataRDD1.foldByKey(10)(_+_) // (a,25) (b,27) (c,29)
+        dataRDD2.collect.foreach(println)
 
 
         sc.stop()

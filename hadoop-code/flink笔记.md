@@ -23,7 +23,7 @@
 ```java
 // Flink保证同步调用onTimer()和processElement() 。因此用户不必担心状态的并发修改。
 // FLink的定时器触发，是通过waterMark进行触发的，混乱程度 2s,  定时器只能触发一次ctx.timerService().currentWatermark()为上一个WM
-// 注册的定时器是针对key的
+// 注册的定时器是针对key的，使用的是socketTextStream，时间间隔>200ms,所以每条数据会生成WM
 @Override
 public void processElement(SensorReading value, Context ctx, Collector<Integer> out) throws Exception {
     System.out.println("上一个WM " + ctx.timerService().currentWatermark() + " 当前WM " + (value.getTimestamp() * 1000L - 2000L) + " 事件时间 " + (value.getTimestamp() * 1000L) + " 定时器触发时间 " + (value.getTimestamp() * 1000L + 1000L));
@@ -123,5 +123,89 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
 
  - hadoop-code/bigDataSolve/FlinkTutorial/src/main/java/com/lh/apitest/tableapi/TableTest2_CommonApi.java
 
-   
+##### keyBy
+
+- keyBy后接入的参数
+
+```java
+1. 直接跟聚合函数
+dataStream.keyBy("id");
+		  .reduce(new ReduceFunction<SensorReading>() {})
+         // .map( new MyKeyCountMapper() ); //MyKeyCountMapper extends RichMapFunction
+
+2. 跟window后再跟WindowFunction，                                                           SingleOutputStreamOperator<Tuple3<String, Long, Integer>> resultStream2 = dataStream.keyBy("id").timeWindow(Time.seconds(15))
+//.process(new ProcessWindowFunction<SensorReading, Object, Tuple, TimeWindow>() {
+//                })
+           .apply(new WindowFunction<SensorReading, Tuple3<String, Long, Integer>, Tuple, TimeWindow>() {
+                    @Override
+  public void apply(Tuple tuple, TimeWindow window, Iterable<SensorReading> input, Collector<Tuple3<String, Long, Integer>> out) throws Exception {
+                        String id = tuple.getField(0);
+                        Long windowEnd = window.getEnd();
+                        Integer count = IteratorUtils.toList(input.iterator()).size();
+                        out.collect(new Tuple3<>(id, windowEnd, count));
+                    }
+                });
+
+3. window后加聚合，聚合一个window记录内的方法
+    dataStream.keyBy("id")
+    	.timeWindow(Time.seconds(15)).sum("temperature");
+              
+4. 跟Window后再跟聚合函数                                                                        SingleOutputStreamOperator<Double> avgTempResultStream = dataStream.keyBy("id")
+                .countWindow(10, 2)
+                .aggregate(new MyAvgTemp()); // MyAvgTemp implements AggregateFunction：累加器
+
+4. 跟process，处理每一个元素
+dataStream.keyBy("id")
+    .process( new MyProcess() ) // MyProcess extends KeyedProcessFunction
+    .print(); 
+5. 
+    dataStream
+     .keyBy("id")
+     
+```
+
+- keyBy用法
+
+  ```java
+  1.
+  DataStream<Long> dataStream1 = env.fromElements(1L, 34L, 4L, 657L, 23L);
+  KeyedStream<Long, Integer> keyedStream2 = dataStream1.keyBy(new KeySelector<Long, Integer>() {
+          @Override
+          public Integer getKey(Long value) throws Exception {
+          return value.intValue() % 2;
+          }
+  });
+  // 2. 写字段，但是需要输入 DataStream<SensorReading> dataStream中为POJO
+  KeyedStream<SensorReading, Tuple> keyedStream = dataStream.keyBy("id");
+  // 3. 坐标，这种没有POJO的
+  DataStream<String> inputDataStream = env.socketTextStream("node01", 8888);
+  DataStream<Tuple2<String, Integer>> resultStream = inputDataStream
+      .flatMap(new WordCount.MyFlatMapper())
+      .keyBy(0) 
+       .sum(1)
+  ```
+
+  
+
+##### SPARK VS FLINK
+
+- key
+
+```scala
+
+// 1. spark
+val dataRDD1:RDD[(String, Int)]= sc.makeRDD(List(("a",1),("b",2),("c",3))).foldByKey(10)(_+_) 
+// reduceByKey等返回RDD[(K, V)] ,只有def groupBy[K](f: T => K)(implicit kt: ClassTag[K]): RDD[(K, Iterable[T])] 的Value返回集合
+
+// 2. flink
+// 签名函数：public KeyedStream<T, Tuple> keyBy(String... fields)
+KeyedProcessFunction中的processElement(I value, Context ctx, Collector<O> out)，
+Context可以访问元素的时间戳，元素的 key。这是因为keyBy(field)，可以选择哪个字段，返回值KeyedStream中不确定前者用了哪个key作为分流
+```
+
+
+
+
+
+
 

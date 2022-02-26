@@ -28,7 +28,7 @@ public class    WindowTest2_CountWindow {
         env.setParallelism(1);
 
 //        // 从文件读取数据
-        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
+        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\resources\\sensor.txt");
 
         // socket文本流
 //        DataStream<String> inputStream = env.socketTextStream("localhost", 7777);
@@ -41,7 +41,11 @@ public class    WindowTest2_CountWindow {
 
         // 开计数窗口测试
         SingleOutputStreamOperator<Double> avgTempResultStream = dataStream.keyBy("id")
-                .countWindow(10, 2)
+                .count
+
+
+
+        10, 2)
                 .aggregate(new MyAvgTemp());
 
         avgTempResultStream.print();

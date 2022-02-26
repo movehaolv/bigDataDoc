@@ -8,10 +8,12 @@ package com.lh.wc;/**
  * Created by wushengran on 2020/11/6 11:48
  */
 
+import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -50,6 +52,8 @@ public class StreamWordCount {
                 .keyBy(0)
                 .sum(1).setParallelism(2).slotSharingGroup("red");
 
+        inputDataStream.flatMap(new WordCount.MyFlatMapper()).slotSharingGroup("green")
+                .keyBy(0);
         resultStream.print().setParallelism(1);
 
         // 执行任务
