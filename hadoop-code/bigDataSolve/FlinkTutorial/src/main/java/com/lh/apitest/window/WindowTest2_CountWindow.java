@@ -41,12 +41,18 @@ public class    WindowTest2_CountWindow {
 
         // 开计数窗口测试
         SingleOutputStreamOperator<Double> avgTempResultStream = dataStream.keyBy("id")
-                .count
-
-
-
-        10, 2)
+                .countWindow( 10, 2)
                 .aggregate(new MyAvgTemp());
+/*
+* CountWindow 的滑动窗口使用例子
+滑动窗口和滚动窗口的函数名是完全一致的，只是在传参数时需要传入两个参数，一个是 window_size，一个是 sliding_size。
+
+示例说明：
+
+下面代码中的 sliding_size设置为了 2，也就是说，每收到两个相同key的数据就计算一次，每一次计算的窗口是前后输入的5个范围的元素。
+*
+* */
+
 
         avgTempResultStream.print();
 

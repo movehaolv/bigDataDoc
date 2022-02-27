@@ -18,7 +18,7 @@
 
 
 
-##### OnTime触发
+##### OnTimer触发
 
 ```java
 // Flink保证同步调用onTimer()和processElement() 。因此用户不必担心状态的并发修改。
@@ -133,7 +133,7 @@ dataStream.keyBy("id");
 		  .reduce(new ReduceFunction<SensorReading>() {})
          // .map( new MyKeyCountMapper() ); //MyKeyCountMapper extends RichMapFunction
 
-2. 跟window后再跟WindowFunction，                                                           SingleOutputStreamOperator<Tuple3<String, Long, Integer>> resultStream2 = dataStream.keyBy("id").timeWindow(Time.seconds(15))
+2. 跟window后再跟WindowFunction，可直接获取一个窗口内的数据                                       SingleOutputStreamOperator<Tuple3<String, Long, Integer>> resultStream2 = dataStream.keyBy("id").timeWindow(Time.seconds(15))
 //.process(new ProcessWindowFunction<SensorReading, Object, Tuple, TimeWindow>() {
 //                })
            .apply(new WindowFunction<SensorReading, Tuple3<String, Long, Integer>, Tuple, TimeWindow>() {
@@ -150,7 +150,7 @@ dataStream.keyBy("id");
     dataStream.keyBy("id")
     	.timeWindow(Time.seconds(15)).sum("temperature");
               
-4. 跟Window后再跟聚合函数                                                                        SingleOutputStreamOperator<Double> avgTempResultStream = dataStream.keyBy("id")
+4. 跟Window后再跟聚合函数，AggregateFunction计算逐条记录                                         SingleOutputStreamOperator<Double> avgTempResultStream = dataStream.keyBy("id")
                 .countWindow(10, 2)
                 .aggregate(new MyAvgTemp()); // MyAvgTemp implements AggregateFunction：累加器
 
@@ -158,6 +158,7 @@ dataStream.keyBy("id");
 dataStream.keyBy("id")
     .process( new MyProcess() ) // MyProcess extends KeyedProcessFunction
     .print(); 
+// KeyedProcessFunction 会处理流的每一个元素，输出为 0 个、 1 个或者多个元素。
 5. 
     dataStream
      .keyBy("id")
@@ -185,7 +186,24 @@ dataStream.keyBy("id")
        .sum(1)
   ```
 
-  
+- KeyedProcessFunction
+
+  - KeyedProcessFunction 用来操作 KeyedStream。 KeyedProcessFunction 会处理流
+    的每一个元素，输出为 **0 个、 1 个或者多个元素**。所有的 Process Function 都继承自
+    RichFunction **[RichMapFunction ，RichFlatMapFunction  ，RichFilterFunction  都继承RichFunction]**接口，所以都有 open()、 close()和 getRuntimeContext()等方法。而
+    KeyedProcessFunction<K, I, O>还额外提供了两个方法:
+    • processElement(I value, Context ctx, Collector<O> out), 流中的每一个元素都
+    会调用这个方法，调用结果将会放在 Collector 数据类型中输出。
+
+    以访问元素的时间戳，元素的 key，以及 TimerService 时间服务。 Context 还
+    可以将结果输出到别的流**(side outputs)**。
+    • **onTimer**(long timestamp, OnTimerContext ctx, Collector<O> out) 是一个回调
+    函数。当之前注册的定时器触发时调用。参数 timestamp 为定时器所设定的
+    触发的时间戳。 Collector 为输出结果的集合。 OnTimerContext 和
+    processElement 的 Context 参数一样，提供了上下文的一些信息，例如定时器
+    触发的时间信息(事件时间或者处理时间)。
+
+  - 综上，如果需要用到定时器，侧输出流，则可选择KeyedProcessFunction。如果只是需要用到状态编程则只需要用RichFlatMapFunction <ref：9.3.2 键控状态>
 
 ##### SPARK VS FLINK
 
@@ -205,7 +223,17 @@ Context可以访问元素的时间戳，元素的 key。这是因为keyBy(field)
 
 
 
+- 结构
 
+  ```java
+  jobmanager:主节点，类似于spark中的master
+  
+  taskManager：从节点，类似于spark中的worker
+  
+  slot：插槽，类似于spark中executor中的线程，只不过flink中的slot是物理存在的，可以手动配置，每个slot执行一个任务，是静态概念，用来隔绝内存。但slot的个数不能多于cpu-cores。并行度上限不能大于slot的数量。
+  ```
+
+  
 
 
 
