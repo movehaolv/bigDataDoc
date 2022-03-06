@@ -138,7 +138,7 @@ public class HBaseDao {
         Put inboxPut = new Put(Bytes.toBytes(uid));
         for (String attend : attends) {
             //获取当前被关注者的近期发布的微博
-            Scan scan = new Scan(Bytes.toBytes(attend + "_"), Bytes.toBytes(attend + "|"));
+            Scan scan = new Scan(Bytes.toBytes(attend + "_"), Bytes.toBytes(attend + "|")); // “|”的ascii比“_”的大
             ResultScanner resultScanner = contTable.getScanner(scan);
             long currentTimeMillis = System.currentTimeMillis();
             for (Result result : resultScanner) {

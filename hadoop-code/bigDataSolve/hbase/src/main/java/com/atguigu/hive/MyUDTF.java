@@ -47,7 +47,6 @@ public class MyUDTF extends GenericUDTF {
 
     public static void main(String[] args) {
         List<String> list = new ArrayList<>();
-        list.trimToSize();
     }
 }
 
