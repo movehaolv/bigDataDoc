@@ -1,0 +1,2177 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <link rel="canonical" href="https://blog.csdn.net/qq_37958845/article/details/105725331"/>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="renderer" content="webkit"/>
+    <meta name="force-rendering" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="report" content='{"pid": "blog", "spm":"1001.2101"}'>
+    <meta name="referrer" content="always">
+    <meta http-equiv="Cache-Control" content="no-siteapp" /><link rel="alternate" media="handheld" href="#" />
+    <meta name="shenma-site-verification" content="5a59773ab8077d4a62bf469ab966a63b_1497598848">
+    <meta name="applicable-device" content="pc">
+    <link  href="https://g.csdnimg.cn/static/logo/favicon32.ico"  rel="shortcut icon" type="image/x-icon" />
+    <title>Zookeeper 如何实现数据一致性的？_梦想的优惠券的博客-CSDN博客_zookeeper 数据一致性</title>
+    <script>
+      (function(){ 
+        var el = document.createElement("script"); 
+        el.src = "https://s3a.pstatp.com/toutiao/push.js?1abfa13dfe74d72d41d83c86d240de427e7cac50c51ead53b2e79d40c7952a23ed7716d05b4a0f683a653eab3e214672511de2457e74e99286eb2c33f4428830"; 
+        el.id = "ttzz"; 
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(el, s);
+      })(window)
+    </script>
+        <meta name="keywords" content="zookeeper 数据一致性">
+        <meta name="csdn-baidu-search"  content='{"autorun":true,"install":true,"keyword":"zookeeper 数据一致性"}'>
+    <meta name="description" content="一.ZAB协议1.什么是ZAB协议？ ZAB 协议的全称是 Zookeeper Atomic Broadcast （Zookeeper 原子广播）。Zookeeper 使用 ZAB协议作为其数据一致性的核心算法，来保证分布式事务的最终一致性。 ZAB 协议并不像 Paxos 算法那样，是一种通用的分布式一致性算法，它是一种特别为 ZooKeeper 设计的崩溃恢复的原子消息广播算法。Zoo...">
+    <script src="//g.csdnimg.cn/tingyun/1.8.5/blog.js" type='text/javascript'></script>
+        <link rel="stylesheet" type="text/css" href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-74b279796d.min.css">
+    <script type="application/ld+json">{"@context":"https://ziyuan.baidu.com/contexts/cambrian.jsonld","@id":"https://blog.csdn.net/qq_37958845/article/details/105725331","appid":"1638831770136827","pubDate":"2020-05-16T11:12:34","title":"Zookeeper 如何实现数据一致性的？_梦想的优惠券的博客-CSDN博客_zookeeper 数据一致性","upDate":"2020-05-16T11:12:34"}</script>
+        <link rel="stylesheet" type="text/css" href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-blackboard/skin-blackboard-3adcc2c475.min.css">
+    <script src="https://csdnimg.cn/public/common/libs/jquery/jquery-1.9.1.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var isCorporate = false;//注释删除enterprise
+        var username =  "qq_37958845";
+        var skinImg = "white";
+        var blog_address = "https://blog.csdn.net/qq_37958845";
+        var currentUserName = "qq_34964399";
+        var isOwner = false;
+        var loginUrl = "http://passport.csdn.net/account/login?from=https://blog.csdn.net/qq_37958845/article/details/105725331";
+        var blogUrl = "https://blog.csdn.net/";
+        var avatar = "https://profile.csdnimg.cn/C/D/2/3_qq_37958845";
+        var articleTitle = "Zookeeper 如何实现数据一致性的？";
+        var articleDesc = "一.ZAB协议1.什么是ZAB协议？ ZAB 协议的全称是 Zookeeper Atomic Broadcast （Zookeeper 原子广播）。Zookeeper 使用 ZAB协议作为其数据一致性的核心算法，来保证分布式事务的最终一致性。 ZAB 协议并不像 Paxos 算法那样，是一种通用的分布式一致性算法，它是一种特别为 ZooKeeper 设计的崩溃恢复的原子消息广播算法。Zoo...";
+        var articleTitles = "Zookeeper 如何实现数据一致性的？_梦想的优惠券的博客-CSDN博客_zookeeper 数据一致性";
+        var nickName = "梦想的优惠券";
+        var articleDetailUrl = "https://blog.csdn.net/qq_37958845/article/details/105725331";
+        if(window.location.host.split('.').length == 3) {
+            blog_address = blogUrl + username;
+        }
+        var skinStatus = "White";
+        var blogStaticHost = "https://csdnimg.cn/release/blogv2/"
+        var isShowConcision = false;
+        var isCookieConcision = false
+        var isHasDirectoryModel = false
+        var isShowSideModel = false
+        var isShowDirectoryModel = true
+        function getCookieConcision(sName){
+            var allCookie = document.cookie.split("; ");
+            for (var i=0; i < allCookie.length; i++){
+                var aCrumb = allCookie[i].split("=");
+                if (sName == aCrumb[0])
+                    return aCrumb[1];
+            }
+            return null;
+        }
+        if (getCookieConcision('blog_details_concision') && getCookieConcision('blog_details_concision') == 0){
+            isCookieConcision = true
+            isShowSideModel = true
+            isShowDirectoryModel = false
+        }
+    </script>
+    <script src="https://g.csdnimg.cn/??fixed-sidebar/1.1.6/fixed-sidebar.js" type="text/javascript"></script>
+    <script src='//g.csdnimg.cn/common/csdn-report/report.js' type='text/javascript'></script>
+    <link rel="stylesheet" type="text/css" href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css">
+    <style>
+        .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+    </style>
+    <script src="https://dup.baidustatic.com/js/ds.js"></script>
+</head>
+  <body class="nodata " style="">
+        <script>
+            var toolbarSearchExt = '{"landingWord":["zookeeper 数据一致性"],"queryWord":"","tag":["分布式","zookeeper"],"title":"Zookeeper 如何实现数据一致性的？"}';
+        </script>
+    <script src="https://g.csdnimg.cn/common/csdn-toolbar/csdn-toolbar.js" type="text/javascript"></script>
+    <script>
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+<link rel="stylesheet" href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css">
+<link rel="stylesheet" href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" />
+
+<script>
+    var articleId = 105725331;
+    var commentscount = 0;
+    var curentUrl = "https://blog.csdn.net/qq_37958845/article/details/105725331";
+    var myUrl = "https://my.csdn.net/";
+    var highlight = ["zookeeper","zookeep","zook","eper","zoo","分布式","keep","ook","zo","pe","分布","数据","er","oo","实现","ee","ep","一致性","一致","布式"];//高亮数组
+    var isRecommendModule = true;
+    var isBaiduPre = true;
+    var baiduCount = 2;
+    var share_card_url = "https://app-blog.csdn.net/share?article_id=105725331&username=qq_37958845"
+	var articleType = 1;
+    var baiduKey = "zookeeper 数据一致性";
+    var userNewReport = true;
+    var needInsertBaidu = true;
+    var recommendRegularDomainArr = ["blog.csdn.net/.+/article/details/","download.csdn.net/download/","edu.csdn.net/course/detail/","ask.csdn.net/questions/","bbs.csdn.net/topics/","www.csdn.net/gather_.+/"]
+    var codeStyle = "dracula";
+    var baiduSearchType = "baidulandingword";
+    var canRead = true;
+    var blogMoveHomeArticle = false;
+    var showPcWindowAd = false;
+    var showHeadWord = true;
+    var showSearchText = "";
+    var linkPage = true;
+    var articleSource = 1;
+    var articleReport = '{"pid": "blog", "spm":"1001.2101"}';
+    var isShowToQuestion = false;
+    var baiduSearchChannel = 'pc_relevant'
+    var baiduSearchIdentification = '.pc_relevant_antiscanv2'
+    var distRequestId = '1648394385244_75758'
+    var initRewardObject = {
+        giver: "qq_34964399",
+        anchor: "qq_37958845",
+        articleId: "105725331",
+        sign: "6d8f140c006f9b5cdaad78941bbc28d8",
+    }
+    var isLikeStatus = false;
+    var isUnLikeStatus = false;
+    var studyLearnWord = "赠一年"
+    var isCurrentUserVip = false;
+    var commentIsNewBeat = "control"
+</script>
+<div class="main_father clearfix d-flex justify-content-center " style="height:100%;"> 
+    <div class="container clearfix " id="mainBox">
+        <script>
+        if(!isCookieConcision){
+            $('.main_father').removeClass('mainfather-concision')
+            $('.main_father .container').removeClass('container-concision')
+        }
+        </script>
+        <main>
+<script type="text/javascript">
+    function getQueryString(name) {   
+      var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象  
+      var r = window.location.search.substr(1).match(reg);  //匹配目标参数
+      if( r != null ) return decodeURIComponent( r[2] ); return '';   
+    }
+    function stripscript(s){ 
+      var pattern = new RegExp("[`~!@#$^&*()=|{}':;',\\[\\].<>/?~！@#￥……&*（）——|{}【】‘；：”“'。，、？%]") 
+      var rs = ""; 
+      for (var i = 0; i < s.length; i++) { 
+        rs = rs+s.substr(i, 1).replace(pattern, ''); 
+      } 
+      return rs; 
+    }
+    var blogHotWords = stripscript(getQueryString('utm_term')).length > 1 ? stripscript(getQueryString('utm_term')) : ''
+</script>
+<div class="blog-content-box">
+        <div class="article-header-box">
+        <div class="article-header">
+            <div class="article-title-box">
+                <h1 class="title-article" id="articleContentId">Zookeeper 如何实现数据一致性的？</h1>
+            </div>
+            <div class="article-info-box">
+                <div class="article-bar-top">
+                    <img class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png" alt="">
+                    <div class="bar-content">
+                    <a class="follow-nickName " href="https://blog.csdn.net/qq_37958845" target="_blank" rel="noopener">梦想的优惠券</a>
+                    <img class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCurrentTime2.png" alt="">
+                    <span class="time">于&nbsp;2020-05-16 11:12:34&nbsp;发布</span>
+                    <img class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png" alt="">
+                    <span class="read-count">1356</span>
+                    <a id="blog_detail_zk_collection" class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}'>
+                        <img class="article-collect-img article-heard-img un-collect-status isdefault" style="display:inline-block" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" alt="">
+                        <img class="article-collect-img article-heard-img collect-status isactive" style="display:none" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" alt="">
+                        <span class="name">收藏</span>
+                        <span class="get-collection">
+                            6
+                        </span>
+                    </a>
+                    </div>
+                </div>
+                <div class="blog-tags-box">
+                    <div class="tags-box artic-tag-box">
+                            <span class="label">分类专栏：</span>
+                                <a class="tag-link" href="https://blog.csdn.net/qq_37958845/category_10012189.html" target="_blank" rel="noopener">Zookeeper</a>
+                            <span class="label">文章标签：</span>
+                                <a data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"分布式","ab":"new"}' class="tag-link" href="https://so.csdn.net/so/search/s.do?q=分布式&amp;t=blog&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=" target="_blank" rel="noopener">分布式</a>
+                                <a data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"zookeeper","ab":"new"}' class="tag-link" href="https://so.csdn.net/so/search/s.do?q=zookeeper&amp;t=blog&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=" target="_blank" rel="noopener">zookeeper</a>
+                    </div>
+                </div>
+                <div class="slide-content-box">
+                    <div class="article-copyright">
+                        <div class="creativecommons">
+                            版权声明：本文为博主原创文章，遵循<a href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener"> CC 4.0 BY-SA </a>版权协议，转载请附上原文出处链接和本声明。
+                        </div>
+                        <div class="article-source-link">
+                            本文链接：<a href="https://blog.csdn.net/qq_37958845/article/details/105725331" target="_blank">https://blog.csdn.net/qq_37958845/article/details/105725331</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="operating">
+                    <a class="href-article-edit slide-toggle">版权</a>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div id="blogColumnPayAdvert">
+            <div class="column-group">
+                <div class="column-group-item column-group0 column-group-item-one">
+                    <div class="item-l">
+                        <a class="item-target" href="https://blog.csdn.net/qq_37958845/category_10012189.html" target="_blank" title="Zookeeper"
+                        data-report-view='{"spm":"1001.2101.3001.6332"}'
+                        data-report-click='{"spm":"1001.2101.3001.6332"}'>
+                            <img class="item-target" src="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="">
+                            <span class="title item-target">
+                                <span>
+                                <span class="tit">Zookeeper</span>
+                                    <span class="dec">专栏收录该内容</span>
+                                </span>
+                            </span>
+                        </a>
+                    </div>
+                    <div class="item-m">
+                        <span>1 篇文章</span>
+                        <span>0 订阅</span>
+                    </div>
+                    <div class="item-r">
+                            <a class="item-target article-column-bt articleColumnFreeBt" data-id="10012189">订阅专栏</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <article class="baidu_pl">
+        <div id="article_content" class="article_content clearfix">
+        <link rel="stylesheet" href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-163de54645.css">
+                <div id="content_views" class="markdown_views prism-dracula">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                        <path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block" style="-webkit-tap-highlight-color: rgba(0, 0, 0, 0);"></path>
+                    </svg>
+                    <h1><a id="ZAB_0"></a>一.ZAB协议</h1> 
+<br /> 
+<h2><a id="1ZAB_3"></a>1.什么是ZAB协议&#xff1f;</h2> 
+<p> ZAB 协议的全称是 Zookeeper Atomic Broadcast &#xff08;Zookeeper 原子广播&#xff09;。Zookeeper 使用 ZAB协议作为其数据一致性的核心算法&#xff0c;来保证分布式事务的最终一致性。<br />  ZAB 协议并不像 Paxos 算法那样&#xff0c;是一种通用的分布式一致性算法&#xff0c;它是一种特别为 ZooKeeper 设计的崩溃恢复的原子消息广播算法。Zookeeper 采用一个单一的主进程接受并处理客户端的所有事务请求&#xff0c;并将服务器数据的状态变更以事务 Proposal 的形式广播到所有的副本进程上去。</p> 
+<p> <strong>ZAB 协议定义</strong>&#xff1a;ZAB 协议是为分布式协调服务 Zookeeper 专门设计的一种支持<code>崩溃恢复</code>和<code>原子广播</code>协议。基于该协议&#xff0c;Zookeeper 实现了一种<code>主备模式</code>&#xff08;即 Leader 和 Follower 模型&#xff09;的系统架构来保持集群中各个副本之间数据一致性。<br />  这里的主备系统架构模型&#xff0c;就是指只有一台客户端&#xff08;Leader&#xff09;负责处理外部的写事务请求&#xff0c;然后 Leader 客户端将数据同步到其他 Follower 节点。<br />  Zookeeper 客户端会随机的链接到 Zookeeper 集群中的一个节点&#xff0c;如果是<code>读请求</code>&#xff0c;就直接从当前节点中读取数据&#xff1b;如果是<code>写请求</code>&#xff0c;那么节点就会向 Leader 提交事务&#xff0c;Leader 接收到事务提交&#xff0c;会广播该事务&#xff0c;只要超过半数节点写入成功&#xff0c;该事务就会被提交。<br /> <img src="https://img-blog.csdnimg.cn/20200424105400376.png?x-oss-process&#61;image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM3OTU4ODQ1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" /><br />  上图显示了 Zookeeper 如何处理集群中的数据。所有客户端写入数据都是写入到主进程&#xff08;称为 Leader&#xff09;中&#xff0c;然后&#xff0c;由 Leader 复制到备份进程&#xff08;称为 Follower&#xff09;中。从而保证数据一致性。从设计上看&#xff0c;和 Raft 类似。<br />  那么复制过程又是如何的呢&#xff1f;复制过程类似 2PC&#xff0c;ZAB 只需要 Follower 有一半以上返回 ACK 信息就可以执行提交&#xff0c;大大减小了同步阻塞&#xff0c;也提高了可用性。</p> 
+<p> 简单介绍完 ZAB协议&#xff0c;接下来重点介绍<code>消息广播</code>和<code>崩溃恢复</code>。整个 Zookeeper 就是在这两个模式之间切换。 简而言之&#xff0c;当 Leader 服务可以正常使用&#xff0c;就进入消息广播模式&#xff0c;当 Leader 不可用时&#xff0c;则进入崩溃恢复模式。<br /> <br /><br /></p> 
+<h2><a id="2_17"></a>2.崩溃恢复</h2> 
+<p> 一旦 Leader 服务器出现崩溃或者由于网络原因导致 Leader 服务器失去了与过半 Follower 的联系&#xff0c;那么就会进入崩溃恢复模式。Zookeeper 崩溃恢复的情况大致可以分为两种&#xff1a;Zookeeper集群初始化启动时 Leader 选举、Zookeeper 集群运行期间 Leader 重新选举。<br />  在 ZAB 协议中&#xff0c;为了保证程序的正确运行&#xff0c;整个恢复过程结束后需要选举出一个新的 Leader 服务器。因此 ZAB 协议需要一个高效且可靠的 Leader 选举算法&#xff0c;从而确保能够快速选举出新的 Leader 。<br />  Leader 选举算法不仅仅需要让 Leader 自己知道自己已经被选举为 Leader &#xff0c;同时还需要让集群中的所有其他机器也能够快速感知到选举产生的新 Leader 服务器。<br />  崩溃恢复主要包括两部分&#xff1a;<code>Leader 选举</code>和<code>数据恢复</code>。</p> 
+<p><strong>ZAB 协议的特性</strong>&#xff1a;</p> 
+<ol><li>ZAB 协议需要确保那些已经在 Leader 服务器上提交&#xff08;Commit&#xff09;的事务最终被所有的服务器提交。</li><li>ZAB 协议需要确保丢弃那些只在 Leader 上被提出而没有被提交的事务。</li></ol> 
+<p><strong>崩溃恢复阶段 ZAB 协议是如何保证数据一致性的</strong>&#xff1f;<br /> 假设两种异常情况&#xff1a;</p> 
+<ol><li>一个事务在 Leader 上提交了&#xff0c;并且过半的 Follower 都响应 ACK 了&#xff0c;但是 Leader 在 Commit 消息发出之前挂了。</li><li>假设一个事务在 Leader 提出之后&#xff0c;Leader 挂了。</li></ol> 
+<p>要确保如果发生上述两种情况&#xff0c;数据还能保持一致性&#xff0c;那么 ZAB 协议选举算法必须满足以下要求&#xff1a;</p> 
+<ol><li>ZAB 协议需要确保那些已经在 Leader 服务器上提交&#xff08;Commit&#xff09;的事务最终被所有的服务器提交。</li><li>ZAB 协议需要确保丢弃那些只在 Leader 上被提出而没有被提交的事务。</li></ol> 
+<p>根据上述要求&#xff0c;ZAB 协议需要保证选举出来的 Leader 需要满足以下条件&#xff1a;</p> 
+<ul><li>1&#xff09;新选举出来的 Leader 不能包含未提交的 Proposal 。<br /> 即新选举的 Leader 必须都是已经<code>提交</code>了 Proposal 的 Follower 服务器节点。</li><li>2&#xff09;新选举的 Leader 节点中含有最大的 zxid 。<br /> 这样做的好处是可以避免 Leader 服务器检查 Proposal 的提交和丢弃工作。</li></ul> 
+<p> 针对这些条件&#xff0c;如果让<code>Leader 选举算法能够保证新选举出来的 Leader 服务器拥有集群中所有机器编号的事务&#xff08;即 ZXID 最大&#xff09;</code>&#xff0c;那么就能够保证这个新选举出来的 Leader 一定具有所有已经提交的提案。而且这么做的另一个好处是&#xff1a;可以省去 Leader 服务器检查事务的提交和丢弃工作的这一步操作。</p> 
+<h3><a id="21Leader__45"></a>2.1Leader 选举</h3> 
+<p> Zookeeper 的 Leader 选举算法使用的是 FastLeaderElection。</p> 
+<pre><code class="prism language-java">    <span class="token comment">/**
+     * Check if a pair (server id, zxid) succeeds our
+     * current vote.
+     *
+     * &#64;param id    Server identifier
+     * &#64;param zxid  Last zxid observed by the issuer of this vote
+     */</span>
+    <span class="token keyword">protected</span> <span class="token keyword">boolean</span> <span class="token function">totalOrderPredicate</span><span class="token punctuation">(</span><span class="token keyword">long</span> newId<span class="token punctuation">,</span> <span class="token keyword">long</span> newZxid<span class="token punctuation">,</span> <span class="token keyword">long</span> newEpoch<span class="token punctuation">,</span> <span class="token keyword">long</span> curId<span class="token punctuation">,</span> <span class="token keyword">long</span> curZxid<span class="token punctuation">,</span> <span class="token keyword">long</span> curEpoch<span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+        LOG<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">&#34;id: &#34;</span> <span class="token operator">&#43;</span> newId <span class="token operator">&#43;</span> <span class="token string">&#34;, proposed id: &#34;</span> <span class="token operator">&#43;</span> curId <span class="token operator">&#43;</span> <span class="token string">&#34;, zxid: 0x&#34;</span> <span class="token operator">&#43;</span>
+                Long<span class="token punctuation">.</span><span class="token function">toHexString</span><span class="token punctuation">(</span>newZxid<span class="token punctuation">)</span> <span class="token operator">&#43;</span> <span class="token string">&#34;, proposed zxid: 0x&#34;</span> <span class="token operator">&#43;</span> Long<span class="token punctuation">.</span><span class="token function">toHexString</span><span class="token punctuation">(</span>curZxid<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span><span class="token function">getQuorumVerifier</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getWeight</span><span class="token punctuation">(</span>newId<span class="token punctuation">)</span> <span class="token operator">&#61;&#61;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{<!-- --></span>
+            <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        
+        <span class="token comment">/*
+         * We return true if one of the following three cases hold:
+         * 1- New epoch is higher
+         * 2- New epoch is the same as current epoch, but new zxid is higher
+         * 3- New epoch is the same as current epoch, new zxid is the same
+         *  as current zxid, but server id is higher.
+         */</span>
+        
+        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>newEpoch <span class="token operator">&gt;</span> curEpoch<span class="token punctuation">)</span> <span class="token operator">||</span> 
+                <span class="token punctuation">(</span><span class="token punctuation">(</span>newEpoch <span class="token operator">&#61;&#61;</span> curEpoch<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+                <span class="token punctuation">(</span><span class="token punctuation">(</span>newZxid <span class="token operator">&gt;</span> curZxid<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>newZxid <span class="token operator">&#61;&#61;</span> curZxid<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>newId <span class="token operator">&gt;</span> curId<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre> 
+<p> 根据代码可得知&#xff0c;先比较Epoch (年号) &#xff0c;再比较Zxid&#xff0c;最后比较服务器ld&#xff0c;大的胜出。</p> 
+<p><strong>主要涉及的类</strong>&#xff1a;<br /> (1)<code>org.apache.zookeeper.server.quorum.QuorumPeer</code>&#xff1a;选举节点&#xff0c;管理Quorum协议的类。该类用来设置一个报文套接字并响应当前 Leader。<br /> (2)<code>org.apache.zookeeper.server.quorum.QuorumCnxManager</code>&#xff1a;选举通信连接管理类。用来完成服务器与服务器之间的网络交互&#xff0c;该类使用 TCP 实现 Leader 选举过程中的连接管理。<br /> (3)<code>org.apache.zookeeper.server.quorum.FastLeaderElection</code>&#xff1a;具体选举算法。是 ZK 默认的 Leader 算法。<br /> (4)<code>org.apache.zookeeper.server.quorum.QuorumPeer.QuorumServer</code>&#xff1a;存放服务器选举信息(服务器唯一标识,服务器地址,服务器选举口)。就是zk配置文件中配置的集群信息&#xff0c;选举的时候&#xff0c;发送选票到集群中的每一个节点。<br /> (5)<code>org.apache.zookeeper.server.quorum.Vote</code>&#xff1a;选票类。涉及到 ServerState 和 LearnerType。<br /> (6)<code>序列化接口</code>&#xff1a;apache jute<br /> <br /></p> 
+<h3><a id="22_86"></a>2.2数据恢复</h3> 
+<p><strong>ZAB 数据同步过程中&#xff0c;如何处理需要丢弃的 Proposal&#xff1f;</strong><br />  在 ZAB 的事务编号 zxid 设计中&#xff0c;zxid 是一个64位的数字&#xff0c;由 Leader 产生&#xff0c;而且它是自增唯一有顺序性。<br />  其中低32位可以看成一个简单的单增计数器&#xff0c;针对客户端每一个事务请求&#xff0c;Leader 在产生新的 Proposal 事务时&#xff0c;都会对该计数器加1。而高32位则代表了 Leader 周期的 epoch 编号。<br />  <code>epoch 编号</code>可以理解为当前集群所处的年代&#xff0c;或者周期。每次 Leader 变更之后都会在 epoch 的基础上加1&#xff0c;这样旧的 Leader 崩溃恢复之后&#xff0c;其他 Follower 接收到旧 Leader 的请求&#xff0c;也不会听执行&#xff0c;因为 Follower 只服从 epoch 最高的 Leader 命令。</p> 
+<p> 每当选举产生一个新的 Leader &#xff0c;就会从这个 Leader 服务器上取出本地事务日志中最大编号 Proposal 的 zxid&#xff0c;并从 zxid 中解析得到对应的 epoch 编号&#xff0c;然后再对其加1&#xff0c;之后该编号就作为新的 epoch 值&#xff0c;并将低32位数字归零&#xff0c;由0开始网上计数。<br />  ZAB 协议通过 epoch 编号来区分 Leader 变化周期&#xff0c;能够有效避免不同的 Leader 错误的使用了相同的 zxid 编号提出了不一样的 Proposal 的异常情况。</p> 
+<p>基于以上策略&#xff1a;<br />  当一个包含了上一个 Leader 周期中尚未提交过的事务 Proposal 的服务器启动时&#xff0c;当这台机器加入集群中&#xff0c;以<code>Follower 角色</code>连上 Leader 服务器后&#xff0c;Leader 服务器会根据自己服务器上最后提交的 Proposal 来和 Follower 服务器的 Proposal 进行比对&#xff0c;比对的结果肯定是 Leader 要求 Follower 进行一个回退操作&#xff0c;回退到一个确实已经被集群中过半机器 Commit 的最新 Proposal。</p> 
+<h4><a id="1_98"></a>(1)直接差异化同步</h4> 
+<p> 示例&#xff1a;某个时刻Leader服务器的事务队列对应的ZXID依次是:0x200000001, 0x200000002, 0x200000003, 0x200000004, 0x200000005&#xff0c;而需要数据同步的服务器最后处理的ZXID为:0x200000003&#xff0c;这种场景就执行&#34;直接差异化同步&#34; ,Leader会依次将0x200000004&#xff0c;0x200000005同步给服务器。<br /> <img src="https://img-blog.csdnimg.cn/20200512122643141.png?x-oss-process&#61;image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM3OTU4ODQ1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" /><br /> <br /></p> 
+<h4><a id="2_103"></a>(2)先回滚再差异化同步</h4> 
+<p> 假如在ZooKeeper集群中有A,B,C三台服务器, B当选为Leader服务器。<br />  某个时刻&#xff0c;B正要处理一个ZXID&#61;0x200000003的事务&#xff0c;并且已经将该事务写入到B服务器的本地的事务日志中(zk的事物日志需要进行格式化才能看)&#xff0c;就在B要发送给其他FollowerA、C机器进行同步的时候&#xff0c;B服务器挂了&#xff0c;Proposal并没有发送出去&#xff0c;而此时ZooKeeper会进行新一轮选举。假设A当选为新的Leader服务器对外进行工作&#xff0c;客户端又提交了 0x300000001 和 0x300000002 两个事务&#xff0c;而此时之前的奔溃的B服务器再次启动,并开始进行数据同步。因为B之前为Leader,故它的本地日志中事务编号为:<br /> 0x200000001, 0x200000002, 0x200000003<br />  而A, C的本地日志中的事务编号为:0x200000001, 0x200000002, 0x300000001, 0x300000002<br />  这时候就需要A服务器对数据进行回滚之后再同步,这个就称之为“先回滚再差异化同步&#34;<br /> <img src="https://img-blog.csdnimg.cn/20200512122826325.png?x-oss-process&#61;image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM3OTU4ODQ1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" /><br /> <br /></p> 
+<h4><a id="3_112"></a>(3)仅回滚同步</h4> 
+<p> 先回滚再差异化的特殊模式。先回滚再差异化同步过程中&#xff0c;A当选Leader后&#xff0c;没有写入0x300000001, 0x300000002这两笔数据。因为B复活后是Follower&#xff0c;Follower没有权限发起议案。<br /> <br /></p> 
+<h4><a id="4_115"></a>(4)全量同步</h4> 
+<p> 如&#xff1a;新加入的Follower服务器。<br /> <br /><br /></p> 
+<h2><a id="3_119"></a>3.消息广播</h2> 
+<p> 在 Zookeeper 集群中&#xff0c;数据副本的传递策略就是采用消息广播模式。Zookeeper 中数据副本的同步方式与二段提交类似&#xff0c;但是却又有不同。二段提交要求协调者必须等到所有的参与者全部反馈 ACK 确认消息后&#xff0c;再发送 commit 消息。要求所有的参与者要么全部成功&#xff0c;要么全部失败。二段提交<code>会产生严重的阻塞问题</code>。<br />  ZAB 协议中 Leader 等待 Follower 的 ACK 反馈消息是指&#34;<code>只要半数以上的Follower成功反馈即可&#xff0c;不需要收到全部Follower反馈</code>&#34;。<br /> <img src="https://img-blog.csdnimg.cn/20200424123122401.png?x-oss-process&#61;image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM3OTU4ODQ1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" /></p> 
+<h1><a id="Zookeeper_125"></a>二.Zookeeper对请求的处理方式</h1> 
+<h2><a id="1_127"></a>1.事物性的请求</h2> 
+<p><strong>事务请求的处理方式</strong>&#xff1a;</p> 
+<ol><li>所有的事务请求必须由一个全局唯一的服务器来协调处理&#xff0c;这样的服务器被叫做 Leader服务器。其他剩余的服务器则是 Follower 服务器。</li><li>Leader服务器负责将一个客户端事务请求&#xff0c;转换成一个事务Proposal&#xff0c;并将该 Proposal 分发给集群中所有的 Follower 服务器&#xff0c;也就是向所有 Follower 节点发送数据广播请求&#xff08;或数据复制&#xff09;。</li><li>分发之后 Leader 服务器需要等待所有 Follower 服务器的反馈&#xff08;ACK请求&#xff09;&#xff0c;<strong>在 ZAB 协议中&#xff0c;只要超过半数的 Follower 服务器进行了正确的反馈后</strong>&#xff08;也就是收到半数以上的Follower的Ack请求&#xff09;&#xff0c;那么 Leader 就会再次向所有的 Follower 服务器发送 Commit 消息&#xff0c;要求其将上一个事务 proposal 进行提交。<br /> <img src="https://img-blog.csdnimg.cn/20200426150353309.png?x-oss-process&#61;image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM3OTU4ODQ1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" /></li></ol> 
+<p><strong>Leader服务器请求处理器链&#xff1a;</strong><br /> <img src="https://img-blog.csdnimg.cn/20200426181250490.png" alt="在这里插入图片描述" /></p> 
+<p><strong>基本流程&#xff1a;</strong></p> 
+<ol><li><code>PrepRequestProcessor</code>&#xff1a;请求预处理器&#xff0c;接收请求并将其封装为一个事务。</li><li><code>ProposalRequestProcessor</code>&#xff1a;对于事务性请求&#xff0c;将请求转发到CommitProcessor外&#xff0c;还会根据请求类型创建对应的Proposal提议&#xff0c;并发送给所有的Follower服务器来发起一次集群内的事务投票。同时&#xff0c;ProposalRequestProcessor还会将事务请求交给SyncRequestProcessor进行事务日志的记录。也就是将数据持久化到磁盘&#xff0c;数据的存储一般可以分为日志数据、快照数据。</li><li><code>SyncRequestProcessor</code>&#xff1a;用来将事务请求记录到事务日志文件中&#xff0c;同时会触发Zookeeper进行数据快照。为了提高写磁盘的效率&#xff0c;周期性调用flush操作。</li></ol> 
+<blockquote> 
+ <p>Leader&#xff1a;对应处理器 AckRequestProcessor&#xff08;不进行网络IO&#xff09;。<br /> Follower&#xff1a;对应处理器 SendAckRequestProcessor&#xff0c;会给 Leader 发送 ACK。</p> 
+</blockquote> 
+<ol start="4"><li><code>AckRequestProcessor</code>&#xff1a;在 SyncRequestProcessor 完成事务日志记录后&#xff0c;向 Proposal 的投票收集器发送 ACK 反馈&#xff0c;以通知投票收集器当前服务器已经完成了对该 Proposal 的事务日志记录。</li><li><code>CommitProcessor</code>&#xff1a;对于事务请求&#xff0c;会等待集群内针对 Proposal 的投票直到该 Proposal 可被提交。</li><li><code>ToBeAppliedRequestProcessor</code>&#xff1a;存储已经被 CommitProcessor 处理过的可被提交的Proposal。并将请求交给 FinalRequestProcessor 处理器处理&#xff0c;处理完后&#xff0c;再从toBeApplied队列中移除。</li><li><code>FinalRequestProcessor</code>&#xff1a;响应客户端 Request&#xff08;包括创建客户端请求的响应&#xff0c;针对事务请求&#xff0c;该处理还会负责将事务应用到内存数据库中去&#xff09;&#xff0c;是处理链的最后一环。</li></ol> 
+<h2><a id="2_150"></a>2.非事务性的请求</h2> 
+<p> Follower 需要接收3中不同的消息&#xff1a;客户端请求、proposal 和 commit。 用来处理非事物请求(查)&#xff0c;只有三个 Processor。<br /> <img src="https://img-blog.csdnimg.cn/20200426183901926.png" alt="在这里插入图片描述" /></p> 
+<p><strong>基本流程&#xff1a;</strong></p> 
+<ol><li><code>FollowerRequestProcessor</code>&#xff1a;接收和处理客户端请求&#xff0c;前转所有请求到 CommitRequestProcessor&#xff0c;并前转写请求到 leader&#xff1b;</li><li><code>CommitProcessor</code>&#xff1a;直接将读请求交由FinalRequestProcessor处理&#xff0c;而对于写请求&#xff0c;转发给leader&#xff0c;等待leader的commit通知&#xff1b;当收到commit通知后&#xff0c;将写请求交给 FinalRequestProcessor。</li><li><code>SyncRequestProcessor</code>&#xff1a;接收来自leader的proposal&#xff0c;持久化事务&#xff0c;并将其交给SendAckRequestProcessor&#xff1b;</li><li><code>SendAckRequestProcessor</code>&#xff1a;向leader发送确认消息&#xff1b;</li><li><code>FinalRequestProcessor</code>&#xff1a;执行请求&#xff0c;响应客户端 Request。</li></ol> 
+<h1><a id="Zookeepersync_162"></a>二.Zookeeper的sync操作</h1> 
+<p> 在分布式系统中&#xff0c;没有绝对的强一致性&#xff0c;因为存在着网络通信&#xff0c;也就是无解的两军问题。对于ZK来说&#xff0c;它是一个CP架构&#xff0c;它在一致性上有人认为它提供的是一种<code>强一致性的服务</code>(获取数据前通过sync操作)&#xff0c;也有人认为是<code>单调一致性</code>(更新时的大多数概念–过半机制)&#xff0c;还有人为是<code>最终一致性</code>(顺序一致性–zxid)&#xff0c;反正各有各的道理。在ZAB协议中多次用到“过半”设计策略 &#xff0c;该策略是zk在A&#xff08;可用性&#xff09;与C&#xff08;一致性&#xff09;间做的取舍&#xff0c;也是zk具有高容错特性的本质。相较分布式事务中的2PC&#xff08;二阶段提交协议&#xff09;的“全量通过”&#xff0c;ZAB协议可用性更高&#xff08;牺牲了部分一致性&#xff09;&#xff0c;能在集群半数以下服务宕机时正常对外提供服务。<br />  总的来说&#xff0c;zk的数据一致性是依靠ZAB协议 &#43; 事物日志来保证的&#xff0c;而ZAB协议的基础是Paxos协议&#xff0c;Paxos协议是分布式一致性算法的鼻祖。<br />  客户端发送的写请求会给leader&#xff0c;而读请求follower是可以处理的&#xff0c;可能会出现读取最新的数据的时候&#xff0c;follwer获取不到数据的情况。<br />  这里&#xff0c;我们聊一聊 ZooKeeper 的强一致性&#xff0c;也就是zk的sync() 函数。sync 是指让 client 当前连接着的ZooKeeper 服务器&#xff0c;和 ZooKeeper 的 Leader 节点同步&#xff08;sync&#xff09;一下数据。<br />  当 follower 收到到 sync 请求时&#xff0c;会将这个请求添加到一个 pendingSyncs 队列里&#xff0c;然后将这个请求发送给 leader&#xff0c;直到收到 leader 的 Leader.SYNC 消息时&#xff0c;才将这个请求从 pendingSyncs 队列里移除&#xff0c;并 commit 这个请求。</p> 
+<p><strong>FollowerRequestProcessor.java</strong></p> 
+<pre><code class="prism language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FollowerRequestProcessor</span> <span class="token keyword">extends</span> <span class="token class-name">ZooKeeperCriticalThread</span> <span class="token keyword">implements</span>
+        <span class="token class-name">RequestProcessor</span> <span class="token punctuation">{<!-- --></span>   
+
+	FollowerZooKeeperServer zks<span class="token punctuation">;</span>
+    
+    <span class="token annotation punctuation">&#64;Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+        <span class="token keyword">try</span> <span class="token punctuation">{<!-- --></span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>finished<span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+                Request request <span class="token operator">&#61;</span> queuedRequests<span class="token punctuation">.</span><span class="token function">take</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>LOG<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+                    ZooTrace<span class="token punctuation">.</span><span class="token function">logRequest</span><span class="token punctuation">(</span>LOG<span class="token punctuation">,</span> ZooTrace<span class="token punctuation">.</span>CLIENT_REQUEST_TRACE_MASK<span class="token punctuation">,</span>
+                            <span class="token string">&#39;F&#39;</span><span class="token punctuation">,</span> request<span class="token punctuation">,</span> <span class="token string">&#34;&#34;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>request <span class="token operator">&#61;&#61;</span> Request<span class="token punctuation">.</span>requestOfDeath<span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token comment">// We want to queue the request to be processed before we submit</span>
+                <span class="token comment">// the request to the leader so that we are ready to receive</span>
+                <span class="token comment">// the response</span>
+                nextProcessor<span class="token punctuation">.</span><span class="token function">processRequest</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                
+                <span class="token comment">// We now ship the request to the leader. As with all</span>
+                <span class="token comment">// other quorum operations, sync also follows this code</span>
+                <span class="token comment">// path, but different from others, we need to keep track</span>
+                <span class="token comment">// of the sync operations this follower has pending, so we</span>
+                <span class="token comment">// add it to pendingSyncs.</span>
+                <span class="token keyword">switch</span> <span class="token punctuation">(</span>request<span class="token punctuation">.</span>type<span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>sync<span class="token operator">:</span>
+                	<span class="token comment">// 将请求添加到一个 pendingSyncs 队列</span>
+                    zks<span class="token punctuation">.</span>pendingSyncs<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    zks<span class="token punctuation">.</span><span class="token function">getFollower</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">request</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>create<span class="token operator">:</span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>delete<span class="token operator">:</span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>setData<span class="token operator">:</span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>setACL<span class="token operator">:</span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>createSession<span class="token operator">:</span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>closeSession<span class="token operator">:</span>
+                <span class="token keyword">case</span> OpCode<span class="token punctuation">.</span>multi<span class="token operator">:</span>
+                    zks<span class="token punctuation">.</span><span class="token function">getFollower</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">request</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+            <span class="token function">handleException</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        LOG<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">&#34;FollowerRequestProcessor exited loop!&#34;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre> 
+<p><strong>FollowerZooKeeperServer.java</strong></p> 
+<pre><code class="prism language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FollowerZooKeeperServer</span> <span class="token keyword">extends</span> <span class="token class-name">LearnerZooKeeperServer</span> <span class="token punctuation">{<!-- --></span>
+
+	<span class="token comment">/*
+     * Pending sync requests
+     */</span>
+    ConcurrentLinkedQueue<span class="token generics function"><span class="token punctuation">&lt;</span>Request<span class="token punctuation">&gt;</span></span> pendingSyncs<span class="token punctuation">;</span>
+	
+	<span class="token comment">// 接收到leader发送的Leader.SYNC消息后&#xff0c;才真正commit这个请求</span>
+    <span class="token keyword">synchronized</span> <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">sync</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{<!-- --></span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>pendingSyncs<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&#61;&#61;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{<!-- --></span>
+            LOG<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">&#34;Not expecting a sync.&#34;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+                
+        Request r <span class="token operator">&#61;</span> pendingSyncs<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		commitProcessor<span class="token punctuation">.</span><span class="token function">commit</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre> 
+<p> 当Leader收到一个sync请求时&#xff0c;如果leader当前没有待commit的决议&#xff0c;那么leader会立即发送一个Leader.SYNC消息给follower。否则&#xff0c;leader会等到当前最后一个待commit的决议完成后&#xff0c;再发送Leader.SYNC消息给Follower。</p> 
+<p><strong>Leader.java</strong></p> 
+<pre><code class="prism language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Leader</span> <span class="token punctuation">{<!-- --></span>
+
+    <span class="token comment">/**
+     * Process sync requests
+     * 
+     * &#64;param r the request
+     */</span>
+    
+    <span class="token keyword">synchronized</span> <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">processSync</span><span class="token punctuation">(</span>LearnerSyncRequest r<span class="token punctuation">)</span><span class="token punctuation">{<!-- --></span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>outstandingProposals<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{<!-- --></span>
+            <span class="token function">sendSync</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{<!-- --></span>
+            List<span class="token generics function"><span class="token punctuation">&lt;</span>LearnerSyncRequest<span class="token punctuation">&gt;</span></span> l <span class="token operator">&#61;</span> pendingSyncs<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>lastProposed<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>l <span class="token operator">&#61;&#61;</span> null<span class="token punctuation">)</span> <span class="token punctuation">{<!-- --></span>
+                l <span class="token operator">&#61;</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token generics function"><span class="token punctuation">&lt;</span>LearnerSyncRequest<span class="token punctuation">&gt;</span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            l<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            pendingSyncs<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>lastProposed<span class="token punctuation">,</span> l<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre> 
+<p> 这有一个隐含的逻辑&#xff0c;就是如果 leader 和 follower 之间的消息通信&#xff0c;是严格按顺序来发送的&#xff08;TCP保证&#xff09;&#xff0c;因此&#xff0c;当 follower 接收到 Leader.SYNC 消息时&#xff0c;说明<code>follower 也一定接收到了leader之前&#xff08;在leader接收到sync请求之前&#xff09;发送的所有提案或者commit消息</code>。这样&#xff0c;就可以确保follower和leader是同步的了。</p>
+                </div>
+                <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-89f5acb30b.css" rel="stylesheet">
+                <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-49037e4d27.css" rel="stylesheet">
+        </div>
+        <div id="treeSkill"></div>
+    </article>
+
+  <script>
+  $(function() {
+    setTimeout(function () {
+      var mathcodeList = document.querySelectorAll('.htmledit_views img.mathcode');
+      if (mathcodeList.length > 0) {
+        var testImg = new Image();
+        testImg.onerror = function () {
+          mathcodeList.forEach(function (item) {
+            $(item).before('<span class="img-codecogs">\\(' + item.alt + '\\)</span>');
+            $(item).remove();
+          })
+          MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+        }
+        testImg.src = mathcodeList[0].src;
+      }
+    }, 1000)
+  })
+  </script>
+</div>
+<div class="more-toolbox-new" id="toolBarBox">
+    <div class="left-toolbox">
+        <div class="toolbox-left">
+            <div class="profile-box"><a class="profile-href" target="_blank" href="https://blog.csdn.net/qq_37958845"><img class="profile-img" src="https://profile.csdnimg.cn/C/D/2/3_qq_37958845"><span class="profile-name">梦想的优惠券</span></a></div>
+            <div class="profile-attend">
+                    <a class="tool-attend tool-bt-button tool-bt-attend" href="javascript:;" data-report-view='{"mod":"1592215036_002","spm":"1001.2101.3001.4232","extend1":"关注"}'>关注</a>
+                <a class="tool-item-follow active-animation" style="display:none;">关注</a>
+            </div>
+        </div>
+        <div class="toolbox-middle">
+        <ul class="toolbox-list">
+            <li class="tool-item tool-item-size tool-active is-like" id="is-like">
+            <a class="tool-item-href">
+                <img style="display:none;" id="is-like-imgactive-animation-like" class="animation-dom active-animation" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarThumbUpactive.png" alt="">
+                <img class="isactive" style="display:none" id="is-like-imgactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2021Active.png" alt="">
+                <img class="isdefault" style="display:block" id="is-like-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2021White.png" alt="">  
+                <span id="spanCount" class="count ">
+                        0
+                </span>
+            </a>
+            <div class="tool-hover-tip"><span class="text space">点赞</span></div>
+            </li>
+            <li class="tool-item tool-item-size tool-active is-unlike" id="is-unlike">
+            <a class="tool-item-href">
+                <img class="isactive" style="margin-right:0px;display:none" id="is-unlike-imgactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUnHeart2021Active.png" alt="">
+                <img class="isdefault" style="margin-right:0px;display:block" id="is-unlike-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUnHeart2021White.png" alt="">
+                <span id="unlikeCount" class="count "></span>
+            </a>
+            <div class="tool-hover-tip"><span class="text space">踩</span></div>
+            </li>
+            <li class="tool-item tool-item-size tool-active tool-item-comment">
+            <a class="tool-item-href" href="#commentBox" data-report-click='{"spm":"1001.2101.3001.7009"}'>
+                <img class="isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newComment2021White.png" alt="">
+                <span class="count">
+                    0
+                </span>
+            </a>
+            <div class="tool-hover-tip"><span class="text space">评论</span></div>
+            </li>
+            <li class="tool-item tool-item-size tool-active is-collection ">
+            <a class="tool-item-href" href="javascript:;" data-report-click='{"mod":"popu_824","spm":"1001.2101.3001.4130","ab":"new"}'>
+                <img style="display:none" id="is-collection-img-collection" class="animation-dom active-animation" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive.png" alt="">
+                <img class="isdefault" id="is-collection-img" style="display:block" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCollectWhite.png" alt="">
+                <img class="isactive" id="is-collection-imgactive" style="display:none" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCollectActive.png" alt="">
+                <span class="count get-collection " id="get-collection">
+                    6
+                </span>
+            </a>
+            <div class="tool-hover-tip"><span class="text space">收藏</span></div>
+            </li>
+            <li class="tool-item tool-item-size tool-active tool-item-reward">
+                <a class="tool-item-href" href="javascript:;" data-report-click='{"mod":"popu_830","spm":"1001.2101.3001.4237","dest":"","ab":"new"}'>
+                <img class="isdefault reward-bt" id="rewardBtNew" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newRewardWhite.png" alt="打赏">
+                <span class="count"></span>
+                </a>
+                <div class="tool-hover-tip"><span class="text space">打赏</span></div>
+            </li>
+            <li class="tool-item tool-item-bar">
+            </li>
+            <li class="tool-item tool-item-size tool-active tool-QRcode" id="tool-share">
+                <a class="tool-item-href" href="javascript:;" data-report-click='{"mod":"1582594662_002","spm":"1001.2101.3001.4129","ab":"new"}'>
+                    <img class="isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newShareWhite.png" alt="">
+                </a>
+                <div class="QRcode" id="tool-QRcode">
+                    <p class="title">
+                    扫一扫，分享内容
+                    </p>
+                    <div id='shareCode'></div>
+                    <a id="copyPosterUrl" class="url" data-report-click='{"spm":"1001.2101.3001.7493"}' data-report-view='{"spm":"1001.2101.3001.7493"}'>点击复制链接</a>
+                </div>
+            </li>
+        </ul>
+        </div>
+        <div class="toolbox-right">
+                <div class="tool-directory">
+                    <a class="bt-columnlist-show"
+                    data-id="10012189"
+                    data-free="true"
+                    data-subscribe="false"
+                    data-title="Zookeeper"
+                    data-img="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64"
+                    data-url="https://blog.csdn.net/qq_37958845/category_10012189.html"
+                    data-sum="1"
+                    data-people="0"
+                    data-price="0"
+                    data-oldprice="0"
+                    data-join="false"
+                    data-studyvip="false"
+                    data-studysubscribe="false"
+                    data-report-view='{"spm":"1001.2101.3001.6334","extend1":"专栏目录"}'
+                    data-report-click='{"spm":"1001.2101.3001.6334","extend1":"专栏目录"}'
+                    >专栏目录</a>
+                </div>
+        </div>
+    </div>  
+</div>
+<script type=text/javascript crossorigin src="https://csdnimg.cn/release/phoenix/production/qrcode-7c90a92189.min.js"></script>
+<script src="//g.csdnimg.cn/??sharewx/1.2.1/sharewx.js" type="text/javascript"></script>
+<script type="text/javascript" crossorigin src="https://g.csdnimg.cn/user-login/3.0.1/user-login.js"></script>
+<script type="text/javascript" crossorigin src="https://g.csdnimg.cn/collection-box/2.0.8/collection-box.js"></script>
+                <div class="first-recommend-box recommend-box">
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/weixin_33935777/article/details/91731244"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6661.1","mod":"popu_871","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant_t0.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"1","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/weixin_33935777/article/details/91731244"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/weixin_33935777/article/details/91731244" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6661.1","mod":"popu_871","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant_t0.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"1","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/weixin_33935777/article/details/91731244"}'  data-report-query='spm=1001.2101.3001.6661.1&utm_medium=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>Zookeeper</em>如何保证<em>数据</em>的<em>一致性</em>？</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/weixin_33935777" target="_blank"><span class="blog-title">weixin_33935777的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">03-20</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					619
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/weixin_33935777/article/details/91731244" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6661.1","mod":"popu_871","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant_t0.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"1","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/weixin_33935777/article/details/91731244"}'  data-report-query='spm=1001.2101.3001.6661.1&utm_medium=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">为什么80%的码农都做不了架构师？&gt;&gt;&gt; 
+                                        
+                ...</div>
+			</a>
+		</div>
+	</div>
+</div>
+                </div>
+            <script src="https://csdnimg.cn/release/blogv2/dist/components/js/pc_wap_commontools-5e28c4e010.min.js" type="text/javascript" async></script>
+            <div class="second-recommend-box recommend-box">
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/weixin_33834679/article/details/93105669"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.1","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"1","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/weixin_33834679/article/details/93105669"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/weixin_33834679/article/details/93105669" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.1","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"1","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/weixin_33834679/article/details/93105669"}'  data-report-query='spm=1001.2101.3001.6650.1&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1">分析<em>Zookeeper</em>的<em>一致性</em>原理</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/weixin_33834679" target="_blank"><span class="blog-title">weixin_33834679的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">04-13</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					857
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/weixin_33834679/article/details/93105669" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.1","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"1","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/weixin_33834679/article/details/93105669"}'  data-report-query='spm=1001.2101.3001.6650.1&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1"><em>zookeeper</em>（简称zk），顾名思义，为动物园管理员的意思，动物对应服务节点，zk是这些节点的管理者。在<em>分布式</em>场景中，zk的应用非常广泛，如：<em>数据</em>发布/订阅、命名服务、配置中心、<em>分布式</em>锁、集群管理、选主与服务发现等等。这不仅得益于zk类文件系统的<em>数据</em>模型和基于Watch<em>er</em>机制的<em>分布式</em>事件通知，也得益于zk特殊的高容错<em>数据</em><em>一致性</em>协议。    这里的<em>一致性</em>，是...</div>
+			</a>
+		</div>
+	</div>
+</div>
+            </div>
+<a id="commentBox" name="commentBox"></a>
+<div id="pcCommentBox" class="comment-box comment-box-new ">
+	<div class="comment-title">参与评论</div>
+	<div class="comment-edit-box d-flex">
+		<div class="user-img">
+			<a href="https://blog.csdn.net/qq_37958845" target="_blank">
+				<img src="https://profile.csdnimg.cn/6/8/1/3_qq_34964399">
+			</a>
+		</div>
+		<form id="commentform">
+			<img class="comment-sofa-flag" src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentFlag@2x.png">
+			<textarea class="comment-content" name="comment_content" id="comment_content" placeholder="请发表有价值的评论， 博客评论不欢迎灌水，良好的社区氛围需大家一起维护。" maxlength="1000"></textarea>
+			<div class="comment-operate-box active">
+				<div class="comment-operate-l">
+					<span id="tip_comment" class="tip">还能输入<em>1000</em>个字符</span>
+				</div>
+				<div class="comment-operate-c">
+					&nbsp;
+				</div>
+				<div class="comment-operate-r">
+					<div class="comment-operate-item comment-emoticon">
+						<img class="comment-operate-img" data-url="https://csdnimg.cn/release/blogv2/dist/pc/img/" src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentEmotionIcon.png" alt="表情包">
+						<span class="comment-operate-tip">插入表情</span>
+						<div class="comment-emoticon-box comment-operate-isshow">
+							<div class="comment-emoticon-img-box"></div>
+						</div>
+					</div>
+					<div class="comment-operate-item comment-code">
+						<img class="comment-operate-img" data-url="https://csdnimg.cn/release/blogv2/dist/pc/img/" src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentCodeIcon.png" alt="表情包">
+						<span class="comment-operate-tip">代码片</span>
+						<div class="comment-code-box comment-operate-isshow">
+							<ul id="commentCode">
+								<li><a data-code="html">HTML/XML</a></li>
+								<li><a data-code="objc">objective-c</a></li>
+								<li><a data-code="ruby">Ruby</a></li>
+								<li><a data-code="php">PHP</a></li>
+								<li><a data-code="csharp">C</a></li>
+								<li><a data-code="cpp">C++</a></li>
+								<li><a data-code="javascript">JavaScript</a></li>
+								<li><a data-code="python">Python</a></li>
+								<li><a data-code="java">Java</a></li>
+								<li><a data-code="css">CSS</a></li>
+								<li><a data-code="sql">SQL</a></li>
+								<li><a data-code="plain">其它</a></li>
+							</ul>
+						</div>
+					</div>
+					<div class="comment-operate-item">
+						<input type="hidden" id="comment_replyId" name="comment_replyId">
+						<input type="hidden" id="article_id" name="article_id" value="105725331">
+						<input type="hidden" id="comment_userId" name="comment_userId" value="">
+						<input type="hidden" id="commentId" name="commentId" value="">
+						<a data-report-click='{"mod":"1582594662_003","spm":"1001.2101.3001.4227","ab":"new"}'><input type="submit" class="btn-comment btn-comment-input" value="评论"><input type="button" class="btn-comment-input btn-comment-defualt" value="评论"></a>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div class="comment-list-container">
+		<div class="comment-list-box">
+		</div>
+		<div id="commentPage" class="pagination-box d-none"></div>
+		<div class="opt-box text-center">
+			<div class="btn btn-sm btn-link-blue" id="btnMoreComment"></div>
+		</div>
+	</div>
+</div>
+            <div class="recommend-box insert-baidu-box">
+                <div class="recommend-item-box clearfix no-index" style="display:none"></div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/yimenglin/article/details/107211897"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.2","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-2.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"2","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/yimenglin/article/details/107211897"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/yimenglin/article/details/107211897" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.2","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-2.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"2","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/yimenglin/article/details/107211897"}'  data-report-query='spm=1001.2101.3001.6650.2&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-2.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-2.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1">mysql如何保证<em>数据</em><em>一致性</em></div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/yimenglin" target="_blank"><span class="blog-title">yimenglin的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">07-08</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					2087
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/yimenglin/article/details/107211897" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.2","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-2.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"2","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/yimenglin/article/details/107211897"}'  data-report-query='spm=1001.2101.3001.6650.2&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-2.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-2.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">1.MySQL<em>数据</em>库层丢<em>数据</em>场景&nbsp; &nbsp;本节我们主要介绍一下在存储引擎层上是如何会丢<em>数据</em>的。1.1.InnoDB丢<em>数据</em>&nbsp; &nbsp; InnoDB支持事务，同Oracle类似，事务提交需要写redo、undo。采用日志先行的策略，将<em>数据</em>的变更在内存中完成，并且将事务记录成redo，顺序的写入redo日志中，即表示该事务已经完成，就可以返回给客户已提交的信息。但是实际上被更改的<em>数据</em>还在内存中，并没有刷新到磁盘，即还没有落地，当达到一定的条件，会触发...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/qq_31960623/article/details/118763914"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.3","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-3.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"3","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_31960623/article/details/118763914"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/qq_31960623/article/details/118763914" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.3","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-3.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"3","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_31960623/article/details/118763914"}'  data-report-query='spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-3.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-3.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>Zookeeper</em><em>数据</em><em>一致性</em>原理</div>
+					<div class="tag">最新发布</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/qq_31960623" target="_blank"><span class="blog-title">wh柒八九的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">07-15</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					130
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/qq_31960623/article/details/118763914" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.3","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-3.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"3","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_31960623/article/details/118763914"}'  data-report-query='spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-3.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-3.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">本文来说下Zab协议，这个协议是<em>Zookeeper</em><em>数据</em><em>一致性</em>的核心。
+
+文章目录概述
+
+概述
+
+</div>
+			</a>
+		</div>
+	</div>
+</div>
+		<dl id="recommend-item-box-tow" class="recommend-item-box type_blog clearfix">
+			
+		</dl>
+<div class="recommend-item-box type_blog clearfix" data-url="https://hejunlin.blog.csdn.net/article/details/113402844"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.4","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-4.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"4","strategy":"2~default~CTRLIST~Rate","dest":"https://hejunlin.blog.csdn.net/article/details/113402844"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://hejunlin.blog.csdn.net/article/details/113402844" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.4","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-4.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"4","strategy":"2~default~CTRLIST~Rate","dest":"https://hejunlin.blog.csdn.net/article/details/113402844"}'  data-report-query='spm=1001.2101.3001.6650.4&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-4.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-4.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1">面试官问：<em>ZooKeeper</em>是强<em>一致</em>的吗？怎么<em>实现</em>的？</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/hejjunlin" target="_blank"><span class="blog-title">欢迎关注公众号：【码农突围】，公号后台回复9999，可以获取一份500页的LeetCode刷题笔记。</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">01-29</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					182
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://hejunlin.blog.csdn.net/article/details/113402844" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.4","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-4.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"4","strategy":"2~default~CTRLIST~Rate","dest":"https://hejunlin.blog.csdn.net/article/details/113402844"}'  data-report-query='spm=1001.2101.3001.6650.4&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-4.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-4.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1"><em>Zookeeper</em>通过ZAB保证<em>分布式</em>事务的最终<em>一致性</em>。
+ZAB全称<em>Zookeeper</em> Atomic Broadcast（ZAB，<em>Zookeeper</em>原子消息广播协议）
+1.ZAB是一种专门为<em>Zookeeper</em>设计的一种支持 崩溃恢复 的 原子广播协议 ，是<em>Zookeeper</em>保证<em>数据</em><em>一致性</em>的核心算法。ZAB借鉴了Paxos算法，但它不是通用的<em>一致性</em>算法，是特别为<em>Zookeeper</em>设计的。
+2.基于ZAB协议，<em>Zookeeper</em><em>实现</em>了⼀种主备模式的系统架构来保持集群中各副本之间的<em>数据</em>的⼀致性，表现形式就是使⽤⼀</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/weixin_44240370/article/details/98479283"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.5","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-5.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"5","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/weixin_44240370/article/details/98479283"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/weixin_44240370/article/details/98479283" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.5","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-5.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"5","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/weixin_44240370/article/details/98479283"}'  data-report-query='spm=1001.2101.3001.6650.5&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-5.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-5.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>ZooKeeper</em>是如何保证<em>数据</em><em>一致性</em>的</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/weixin_44240370" target="_blank"><span class="blog-title">weixin_44240370的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">08-05</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					1万+
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/weixin_44240370/article/details/98479283" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.5","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-5.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"5","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/weixin_44240370/article/details/98479283"}'  data-report-query='spm=1001.2101.3001.6650.5&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-5.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-5.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">前面在讲HDFS和HBase架构分析的时候就提到了<em>Zookeeper</em>。在<em>分布式</em>系统里的多台服务器要对<em>数据</em>状态达成<em>一致</em>，其实是一件很有难度和挑战的事情，因为服务器集群环境的软硬件故障随时会发生，多台服务器对一个<em>数据</em>的记录保持<em>一致</em>，需要一些技巧和设计。
+今天要讨论的是<em>分布式</em>系统<em>一致性</em>与<em>Zookeeper</em>的架构
+通过之前的文章大家应该已经了解了HDFS为了保证整个集群的高可用，需要部署两台NameNod...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/weixin_34319111/article/details/94536574"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.6","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-6.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"6","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/weixin_34319111/article/details/94536574"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/weixin_34319111/article/details/94536574" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.6","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-6.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"6","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/weixin_34319111/article/details/94536574"}'  data-report-query='spm=1001.2101.3001.6650.6&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-6.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-6.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>ZooKeeper</em>学习第七期--<em>ZooKeeper</em><em>一致性</em>原理</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/weixin_34319111" target="_blank"><span class="blog-title">weixin_34319111的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">12-09</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					468
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/weixin_34319111/article/details/94536574" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.6","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-6.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"6","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/weixin_34319111/article/details/94536574"}'  data-report-query='spm=1001.2101.3001.6650.6&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-6.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-6.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">一、<em>ZooKeeper</em> 的<em>实现</em>
+1.1 <em>ZooKeeper</em>处理单点故障
+我们知道可以通过<em>ZooKeeper</em>对<em>分布式</em>系统进行Mast<em>er</em>选举，来解决<em>分布式</em>系统的单点故障，如图所示。
+图 1.1 <em>ZooKeeper</em>解决单点故障 
+
+那么我们继续分析一下，<em>ZooKeeper</em>通过Mast<em>er</em>选举来帮助<em>分布式</em>系统解决单点故障，保证该系统中每时每刻只有一个Mast<em>er</em>为<em>分布式</em>系统提供服务。也就是说分...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/liuy_98_1001/article/details/78673365"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.7","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-7.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"7","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/liuy_98_1001/article/details/78673365"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/liuy_98_1001/article/details/78673365" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.7","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-7.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"7","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/liuy_98_1001/article/details/78673365"}'  data-report-query='spm=1001.2101.3001.6650.7&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-7.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-7.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>ZooKeeper</em><em>数据</em><em>一致性</em></div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/liuy_98_1001" target="_blank"><span class="blog-title">宁静致远</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">11-30</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					8112
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/liuy_98_1001/article/details/78673365" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.7","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-7.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"7","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/liuy_98_1001/article/details/78673365"}'  data-report-query='spm=1001.2101.3001.6650.7&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-7.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-7.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1"><em>ZooKeeper</em>为存储的<em>数据</em>提供了<em>一致性</em>保证，不管应用从哪个服务端获取<em>数据</em>，都能获取到<em>一致</em>的<em>数据</em>。<em>ZooKeeper</em>内部使用原子广播协议（Zab）作为其<em>一致性</em>复制的核心，并通过对服务端请求的排序达到<em>数据</em><em>一致性</em>的保障要求。<em>ZooKeeper</em>的<em>数据</em><em>一致性</em>保障<em>ZooKeeper</em>是高性能、可扩展的，为应用提供了以下的<em>数据</em><em>一致性</em>保障： 
+    1）顺序<em>一致性</em> 
+    来自客户端的更新将严格按照客户端发送</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/liuhaiabc/article/details/70771322"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.8","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-8.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"8","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/liuhaiabc/article/details/70771322"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/liuhaiabc/article/details/70771322" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.8","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-8.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"8","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/liuhaiabc/article/details/70771322"}'  data-report-query='spm=1001.2101.3001.6650.8&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-8.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-8.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1">通俗理解<em>ZooKeeper</em>是如何保证<em>数据</em><em>一致性</em>的</div>
+					<div class="tag">热门推荐</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/liuhaiabc" target="_blank"><span class="blog-title">格色情调的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">04-26</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					2万+
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/liuhaiabc/article/details/70771322" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.8","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-8.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"8","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/liuhaiabc/article/details/70771322"}'  data-report-query='spm=1001.2101.3001.6650.8&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-8.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-8.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1"><em>ZooKeeper</em>是个集群，内部有多个s<em>er</em>v<em>er</em>，每个s<em>er</em>v<em>er</em>都可以连接多个client，每个client都可以修改s<em>er</em>v<em>er</em>中的<em>数据</em>
+<em>ZooKeeper</em>可以保证每个s<em>er</em>v<em>er</em>内的<em>数据</em>完全<em>一致</em>，是如何<em>实现</em>的呢？
+答：<em>数据</em><em>一致性</em>是靠Paxos算法保证的，Paxos可以说是<em>分布式</em><em>一致性</em>算法的鼻祖，是<em>ZooKeeper</em>的基础
+Paxos的基本思路：
+
+
+假设有一个社团，其中有团员、</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/nawenqiang/article/details/85236952"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.9","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-9.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"9","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/nawenqiang/article/details/85236952"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/nawenqiang/article/details/85236952" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.9","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-9.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"9","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/nawenqiang/article/details/85236952"}'  data-report-query='spm=1001.2101.3001.6650.9&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-9.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-9.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>zookeeper</em>所能保证的<em>一致性</em></div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/nawenqiang" target="_blank"><span class="blog-title">MyObject-C的专栏</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">12-24</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					7049
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/nawenqiang/article/details/85236952" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.9","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-9.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"9","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/nawenqiang/article/details/85236952"}'  data-report-query='spm=1001.2101.3001.6650.9&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-9.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-9.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">什么叫顺序<em>一致性</em>？
+
+假设有一个<em>Zookeeper</em>集群（N&amp;gt;=3，N为奇数），那么只有一个Lead<em>er</em>（通过FastLead<em>er</em>Election选主策略选取），所有的写操作（客户端请求Lead<em>er</em>或Follow<em>er</em>的写操作）都由Lead<em>er</em>统一处理，Follow<em>er</em>虽然对外提供读写，但写操作会提交到Lead<em>er</em>，由Lead<em>er</em>和Follow<em>er</em>共同保证同一个Follow<em>er</em>请求的顺序性，Le...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/qq_35338741/article/details/106939192"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.10","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-10.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"10","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_35338741/article/details/106939192"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/qq_35338741/article/details/106939192" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.10","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-10.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"10","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_35338741/article/details/106939192"}'  data-report-query='spm=1001.2101.3001.6650.10&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-10.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-10.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>zookeeper</em>如何保证<em>一致性</em></div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/qq_35338741" target="_blank"><span class="blog-title">qq_35338741的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">06-24</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					471
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/qq_35338741/article/details/106939192" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.10","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-10.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"10","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_35338741/article/details/106939192"}'  data-report-query='spm=1001.2101.3001.6650.10&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-10.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-10.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1"><em>ZooKeeper</em>是个集群，内部有多个s<em>er</em>v<em>er</em>，每个s<em>er</em>v<em>er</em>都可以连接多个client，每个client都可以修改s<em>er</em>v<em>er</em>中的<em>数据</em>
+<em>ZooKeeper</em>可以保证每个s<em>er</em>v<em>er</em>内的<em>数据</em>完全<em>一致</em>，是如何<em>实现</em>的呢？
+
+答：<em>数据</em><em>一致性</em>是靠Paxos算法保证的，Paxos可以说是<em>分布式</em><em>一致性</em>算法的鼻祖，是<em>ZooKeeper</em>的基础
+
+Paxos的基本思路：(深入解读<em>zookeeper</em><em>一致性</em>原理)
+
+
+
+假设有一个社团，其中有团员、议员（决议小组成员）两个角色
+
+团员可以向议员申请提案来修改社团制度
+...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/qq_34319644/article/details/90528141"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.11","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-11.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"11","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_34319644/article/details/90528141"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/qq_34319644/article/details/90528141" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.11","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-11.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"11","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_34319644/article/details/90528141"}'  data-report-query='spm=1001.2101.3001.6650.11&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-11.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-11.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1">8 ，<em>zookeeper</em> <em>数据</em><em>一致性</em>，存取原理</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/qq_34319644" target="_blank"><span class="blog-title">孙砚秋的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">05-25</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					329
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/qq_34319644/article/details/90528141" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.11","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-11.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"11","strategy":"2~default~CTRLIST~Rate","dest":"https://blog.csdn.net/qq_34319644/article/details/90528141"}'  data-report-query='spm=1001.2101.3001.6650.11&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-11.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-11.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">1 ，javaAPI 连接任何一个节点都可以存取<em>数据</em>：
+1.在 node01 节点存储<em>数据</em>
+
+@Test   //  create /b j<em>er</em>ry
+public void create() throws Int<em>er</em>ruptedExc<em>ep</em>tion, IOExc<em>ep</em>tion, <em>Keep</em><em>er</em>Exc<em>ep</em>tion {
+    //  连接
+    <em>ZooKeeper</em> zk = new <em>ZooKeeper</em>(&quot;node01:2181&quot;,5000,null);
+    //  创建节点
+    if(zk</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/u011277123/article/details/88709238"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.12","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-12.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"12","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/u011277123/article/details/88709238"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/u011277123/article/details/88709238" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.12","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-12.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"12","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/u011277123/article/details/88709238"}'  data-report-query='spm=1001.2101.3001.6650.12&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-12.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-12.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>ZooKeeper</em> <em>一致性</em>协议 ZAB 原理</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/u011277123" target="_blank"><span class="blog-title">u011277123的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">03-21</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					371
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/u011277123/article/details/88709238" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.12","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-12.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"12","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/u011277123/article/details/88709238"}'  data-report-query='spm=1001.2101.3001.6650.12&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-12.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-12.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">Java高级互联网架构2019-03-20 14:14:52
+
+<em>一致性</em>协议有很多种，比如 Paxos，Raft，2PC，3PC等等，今天我们讲一种协议，ZAB 协议，该协议应该是所有<em>一致性</em>协议中生产环境中应用最多的了。为什么呢？因为他是为 <em>Zookeeper</em> 设计的<em>分布式</em><em>一致性</em>协议！
+
+1. 什么是 ZAB 协议？ ZAB 协议介绍
+
+1、ZAB 协议全称：<em>Zookeeper</em> Atomic Br...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://xianglei.blog.csdn.net/article/details/109010450"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.13","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-13.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"13","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://xianglei.blog.csdn.net/article/details/109010450"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://xianglei.blog.csdn.net/article/details/109010450" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.13","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-13.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"13","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://xianglei.blog.csdn.net/article/details/109010450"}'  data-report-query='spm=1001.2101.3001.6650.13&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-13.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-13.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1">闲谈<em>Zookeeper</em><em>一致性</em>协议--ZAB</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/u011583316" target="_blank"><span class="blog-title">积累、成长</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">10-11</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					472
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://xianglei.blog.csdn.net/article/details/109010450" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.13","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-13.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"13","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://xianglei.blog.csdn.net/article/details/109010450"}'  data-report-query='spm=1001.2101.3001.6650.13&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-13.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-13.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">ZAB协议
+国庆八天乐就这样结束了！2020年没有假期了！同学你难受吗？
+
+今天先简单聊聊ZAB协议，个人认为搞懂ZAB协议和Lead<em>er</em>选举算法的关系和流程对于深入认识<em>Zookeeper</em>是一个比不可少的环节。
+请允许我盼过年
+
+<em>Zookeeper</em>
+
+百度百科：<em>ZooKeeper</em>是一个<em>分布式</em>的，开放源码的<em>分布式</em>应用程序协调服务，是G<em>oo</em>gle的Chubby一个开源的<em>实现</em>，是Had<em>oo</em>p和Hbase的重要组件。
+它是一个为<em>分布式</em>应用提供<em>一致性</em>服务的软件，提供的功能包括：配置维护、域名服务、<em>分布式</em>同步、组服务等</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/Charlie_jun/article/details/106918873"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.14","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-14.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"14","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Charlie_jun/article/details/106918873"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/Charlie_jun/article/details/106918873" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.14","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-14.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"14","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Charlie_jun/article/details/106918873"}'  data-report-query='spm=1001.2101.3001.6650.14&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-14.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-14.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>zookeeper</em>是怎样<em>实现</em><em>数据</em><em>一致性</em>的？</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/Charlie_jun" target="_blank"><span class="blog-title">海鸥~</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">06-23</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					4478
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/Charlie_jun/article/details/106918873" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.14","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-14.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"14","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Charlie_jun/article/details/106918873"}'  data-report-query='spm=1001.2101.3001.6650.14&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-14.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-14.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">众所周知，<em>zookeeper</em>是一个开源的<em>分布式</em>协调服务，很多<em>分布式</em>的应用都是基于<em>zookeeper</em>来<em>实现</em><em>分布式</em>锁，服务管理，服务发现，通知订阅等功能。那么。<em>zookeeper</em>自身是如何在<em>分布式</em>环境下<em>实现</em><em>数据</em>的<em>一致性</em>的呢。
+一、结构
+既然<em>zookeeper</em>是在<em>分布式</em>环境下提供服务的，那么它必须要解决的问题就是单点问题，因此<em>zookeeper</em>是一个主备的结构。<em>zookeeper</em> 存在lead<em>er</em>,follow<em>er</em>,obs<em>er</em>v<em>er</em>三种角色,这三种角色在实际服务集群中都是服务节点。
+
+lead<em>er</em>:处理所有请求，</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/Delicious_Life/article/details/108164572"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.15","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-15.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"15","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Delicious_Life/article/details/108164572"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/Delicious_Life/article/details/108164572" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.15","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-15.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"15","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Delicious_Life/article/details/108164572"}'  data-report-query='spm=1001.2101.3001.6650.15&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-15.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-15.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>Zookeeper</em>如何保证<em>数据</em><em>一致性</em></div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/Delicious_Life" target="_blank"><span class="blog-title">我能在河边钓一整天的鱼</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">08-22</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					322
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/Delicious_Life/article/details/108164572" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.15","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-15.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"15","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Delicious_Life/article/details/108164572"}'  data-report-query='spm=1001.2101.3001.6650.15&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-15.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-15.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">目录
+
+前言
+
+ZK是事务处理模式
+
+什么是ZAB协议
+
+Zab协议中的Zxid
+
+消息广播阶段工作流程
+
+崩溃恢复阶段工作流程
+
+ZAB和Paxos算法的联系与区别
+
+
+
+
+前言
+
+
+
+
+在<em>分布式</em>场景中，zk应用非常广泛：比如发布订阅、命名服务、配置中心、注册中心、<em>分布式</em>锁等。
+
+zk提供了一个类似Linux文件系统的<em>数据</em>模型，和基于Watch<em>er</em>机制的<em>分布式</em>事件通知，这些特性都依赖zk的高容错<em>数据</em><em>一致性</em>协议
+
+
+
+
+ZK是事务处理模式
+
+
+
+
+zk通过ZAB协议保证<em>分布式</em>事务的最终<em>一致性</em>。Z...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/qqqq0199181/article/details/80865828"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.16","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-16.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"16","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/qqqq0199181/article/details/80865828"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/qqqq0199181/article/details/80865828" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.16","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-16.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"16","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/qqqq0199181/article/details/80865828"}'  data-report-query='spm=1001.2101.3001.6650.16&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-16.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-16.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>zookeeper</em>是如何<em>实现</em><em>数据</em><em>一致性</em>的？</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/qqqq0199181" target="_blank"><span class="blog-title">qqqq0199181的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">06-30</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					8977
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/qqqq0199181/article/details/80865828" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.16","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-16.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"16","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/qqqq0199181/article/details/80865828"}'  data-report-query='spm=1001.2101.3001.6650.16&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-16.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-16.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">众所周知，<em>zookeeper</em>是一个开源的<em>分布式</em>协调服务，很多<em>分布式</em>的应用都是基于<em>zookeeper</em>来<em>实现</em><em>分布式</em>锁，服务管理，服务发现，通知订阅等功能。那么。<em>zookeeper</em>自身是如何在<em>分布式</em>环境下<em>实现</em><em>数据</em>的<em>一致性</em>的呢。
+
+
+
+结构
+
+既然<em>zookeeper</em>是在<em>分布式</em>环境下提供服务的，那么它必须要解决的问题就是单点问题，因此<em>zookeeper</em>是一个主备的结构。<em>zookeeper</em> 存在lead<em>er</em>,...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/qq_38197844/article/details/107939247"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.17","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-17.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"17","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/qq_38197844/article/details/107939247"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/qq_38197844/article/details/107939247" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.17","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-17.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"17","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/qq_38197844/article/details/107939247"}'  data-report-query='spm=1001.2101.3001.6650.17&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-17.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-17.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>zookeeper</em>如何保证<em>数据</em>的<em>一致性</em>？</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/qq_38197844" target="_blank"><span class="blog-title">qq_38197844的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">08-11</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					403
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/qq_38197844/article/details/107939247" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.17","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-17.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"17","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/qq_38197844/article/details/107939247"}'  data-report-query='spm=1001.2101.3001.6650.17&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-17.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-17.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1">1. 保证<em>数据</em>的<em>一致性</em>有两种情况：第一是故障恢复阶段的<em>数据</em>同步，即新lead<em>er</em>选举之后的<em>数据</em>同步；第二是lead<em>er</em>处理完事务请求与follow<em>er</em>保持<em>数据</em>同步。
+
+2.1 故障恢复阶段的<em>数据</em>同步：lead<em>er</em>为每个follow<em>er</em>准备一个队列，将没有被同步的事务以proposal请求形式放入队列，然后对每个事务请求追加一个commit请求，表示该事务被提交，完成<em>数据</em>的同步。
+
+2.2 lead<em>er</em>处理事务请求与follow<em>er</em>保持<em>数据</em>同步：
+...</div>
+			</a>
+		</div>
+	</div>
+</div>
+<div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/Leon_Jinhai_Sun/article/details/112912701"  data-report-view='{"ab":"new","spm":"1001.2101.3001.6650.18","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-18.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"18","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Leon_Jinhai_Sun/article/details/112912701"}'>
+	<div class="content-box">
+		<div class="content-blog display-flex">
+			<div class="title-box">
+				<a href="https://blog.csdn.net/Leon_Jinhai_Sun/article/details/112912701" class="tit" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.18","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-18.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"18","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Leon_Jinhai_Sun/article/details/112912701"}'  data-report-query='spm=1001.2101.3001.6650.18&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-18.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-18.pc_relevant_antiscanv2'>
+					<div class="left ellipsis-online ellipsis-online-1"><em>Zookeeper</em>的<em>一致性</em>是什么情况？</div>
+				</a>
+			</div>
+			<div class="info-box display-flex">
+				<div class="info">
+					<a href="https://blog.csdn.net/Leon_Jinhai_Sun" target="_blank"><span class="blog-title">Leon_Jinhai_Sun的博客</span></a>
+				</div>
+				<div class="info display-flex">
+					<span class="info-block time">01-20</span>
+					<span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					112
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="desc-box">
+			<a href="https://blog.csdn.net/Leon_Jinhai_Sun/article/details/112912701" target="_blank"  data-report-click='{"ab":"new","spm":"1001.2101.3001.6650.18","mod":"popu_387","extra":"{\"highlightScore\":0.0,\"utm_medium\":\"distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-18.pc_relevant_antiscanv2\",\"dist_request_id\":\"1648394385244_75758\"}","dist_request_id":"1648394385244_75758","ab_strategy":"antiscanv2","index":"18","strategy":"2~default~BlogCommendFromBaidu~Rate","dest":"https://blog.csdn.net/Leon_Jinhai_Sun/article/details/112912701"}'  data-report-query='spm=1001.2101.3001.6650.18&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-18.pc_relevant_antiscanv2&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-18.pc_relevant_antiscanv2'>
+				<div class="desc ellipsis-online ellipsis-online-1"><em>Zookeeper</em>的<em>一致性</em>，体现的是什么<em>一致</em>呢？
+
+根据前面讲的zab协议的同步流程，在<em>zookeeper</em>集群内部的<em>数据</em>副本同步，是基于过半提交的策略，意味着它是最终<em>一致性</em>。并不满足强<em>一致</em>的要求。
+
+其实正确来说，<em>zookeeper</em>是一个顺序<em>一致性</em>模型。由于<em>zookeeper</em>设计出来是提供<em>分布式</em>锁服务，那么意味着它本身需要<em>实现</em>顺序<em>一致性</em>（http://<em>zookeeper</em>.apache.org/doc/r3.5.5/<em>zookeeper</em>Programm<em>er</em>s.html#ch_zkGuarant<em>ee</em>s）顺序一..</div>
+			</a>
+		</div>
+	</div>
+</div>
+            </div>
+<div id="recommendNps" class="recommend-nps-box common-nps-box">
+  <h3 class="aside-title">“相关推荐”对你有帮助么？</h3>
+  <div class="aside-content">
+      <ul class="newnps-list">
+          <li class="newnps-item" data-type="非常没帮助">
+              <div class="newnps-img-box">
+                  <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel1.png" alt="">
+                  <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey1.png" alt="">
+              </div>
+              <div class="newnps-text">非常没帮助</div>
+          </li>
+          <li class="newnps-item" data-type="没帮助">
+              <div class="newnps-img-box">
+                  <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel2.png" alt="">
+                  <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey2.png" alt="">
+              </div>
+              <div class="newnps-text">没帮助</div>
+          </li>
+          <li class="newnps-item" data-type="一般">
+              <div class="newnps-img-box">
+                  <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel3.png" alt="">
+                  <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey3.png" alt="">
+              </div>
+              <div class="newnps-text">一般</div>
+          </li>
+          <li class="newnps-item" data-type="有帮助">
+              <div class="newnps-img-box">
+                  <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel4.png" alt="">
+                  <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey4.png" alt="">
+              </div>
+              <div class="newnps-text">有帮助</div>
+          </li>
+          <li class="newnps-item" data-type="非常有帮助">
+              <div class="newnps-img-box">
+                  <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel5.png" alt="">
+                  <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey5.png" alt="">
+              </div>
+              <div class="newnps-text">非常有帮助</div>
+          </li>
+      </ul>
+      <div class="newnps-form-box">
+      <div class="newnps-form">
+          <input type="text" placeholder="请输入建议或反馈后点击提交" class="newnps-input">
+          <span class="newnps-btn">提交</span>
+      </div>
+      </div>
+  </div>
+</div>            <div class="template-box">
+                <span>©️2022 CSDN</span>
+                <span>皮肤主题：技术黑板</span>
+                <span> 设计师：CSDN官方博客</span>
+                <span>
+                    <a href="https://blog.csdn.net/" class="back-home c-blue c-blue-hover c-blue-focus">返回首页</a>
+                </span>
+            </div>
+<div class="blog-footer-bottom" style="margin-top:10px;"></div>
+<script src="https://g.csdnimg.cn/common/csdn-footer/csdn-footer.js" data-isfootertrack="false" type="text/javascript"></script>
+<script type="text/javascript">
+    window.csdn.csdnFooter.options = {
+        el: '.blog-footer-bottom',
+        type: 2
+    }
+</script>        </main>
+<aside class="blog_container_aside">
+	<div id="asideProfile" class="aside-box">
+    <div class="profile-intro d-flex">
+        <div class="avatar-box d-flex justify-content-center flex-column">
+            <a href="https://blog.csdn.net/qq_37958845" target="_blank" data-report-click='{"mod":"popu_379","spm":"1001.2101.3001.4121","dest":"https://blog.csdn.net/qq_37958845","ab":"new"}'>
+                <img src="https://profile.csdnimg.cn/C/D/2/3_qq_37958845" class="avatar_pic">
+            </a>
+        </div>
+        <div class="user-info d-flex flex-column profile-intro-name-box">
+            <div class="profile-intro-name-boxTop">
+                <a href="https://blog.csdn.net/qq_37958845" target="_blank" class="" id="uid" title="梦想的优惠券" data-report-click='{"mod":"popu_379","spm":"1001.2101.3001.4122","dest":"https://blog.csdn.net/qq_37958845","ab":"new"}'>
+                    <span class="name " username="qq_37958845">梦想的优惠券</span>
+                </a>
+                <span>
+                </span>
+                <span class="flag expert-blog">
+                <span class="bubble">CSDN认证博客专家</span>
+                </span>
+                <span class="flag company-blog">
+                <span class="bubble">CSDN认证企业博客</span>
+                </span>
+            </div>
+            <div class="profile-intro-name-boxFooter">
+                <span class="personal-home-page personal-home-years">码龄5年</span>
+                    <span class="personal-home-page">
+                    <a class="personal-home-certification" href="https://i.csdn.net/#/uc/profile?utm_source=14998968" target="_blank" title="暂无认证">
+                    <img src="https://csdnimg.cn/identity/nocErtification.png" alt="">
+                    暂无认证
+                    </a>
+                    </span>
+            </div>
+        </div>
+    </div>
+    <div class="data-info d-flex item-tiling">
+        <dl class="text-center" title="37">
+            <a href="https://blog.csdn.net/qq_37958845" data-report-click='{"mod":"1598321000_001","spm":"1001.2101.3001.4310"}' data-report-query="t=1">  
+                <dt><span class="count">37</span></dt>
+                <dd class="font">原创</dd>
+            </a>
+        </dl>
+        <dl class="text-center" data-report-click='{"mod":"1598321000_002","spm":"1001.2101.3001.4311"}' title="172122">
+            <a href="https://blog.csdn.net/rank/list/weekly" target="_blank">
+                <dt><span class="count">17万+</span></dt>
+                <dd class="font">周排名</dd>
+            </a>
+        </dl>
+        <dl class="text-center" title="68944">
+            <a href="https://blog.csdn.net/rank/list/total" data-report-click='{"mod":"1598321000_003","spm":"1001.2101.3001.4312"}' target="_blank">
+                <dt><span class="count">6万+</span></dt>
+                <dd class="font">总排名</dd>
+            </a>
+        </dl>
+        <dl class="text-center" style="min-width:58px" title="59939">  
+            <dt><span class="count">5万+</span></dt>
+            <dd>访问</dd>
+        </dl>
+        <dl class="text-center" title="3级,点击查看等级说明">
+            <dt><a href="https://blog.csdn.net/blogdevteam/article/details/103478461" target="_blank">
+                <img class="level" src="https://csdnimg.cn/identity/blog3.png">
+            </a>
+            </dt>
+            <dd>等级</dd>
+        </dl>
+    </div>
+    <div class="item-rank"></div>
+    <div class="data-info d-flex item-tiling">
+        <dl class="text-center" title="715">
+            <dt><span class="count">715</span></dt>
+            <dd>积分</dd>
+        </dl>
+         <dl class="text-center" id="fanBox" title="7">
+            <dt><span class="count" id="fan">7</span></dt>
+            <dd>粉丝</dd>
+        </dl>
+        <dl class="text-center" title="24">
+            <dt><span class="count">24</span></dt>
+            <dd>获赞</dd>
+        </dl>
+        <dl class="text-center" title="12">
+            <dt><span class="count">12</span></dt>
+            <dd>评论</dd>
+        </dl>
+        <dl class="text-center" title="63">
+            <dt><span class="count">63</span></dt>
+            <dd>收藏</dd>
+        </dl>
+    </div>
+    <div class="aside-box-footer" data-report-view='{"spm":"3001.4296"}'>
+        <div class="badge-box d-flex">
+            <div class="badge d-flex">
+                <div class="icon-badge" title="GitHub">
+                    <div class="mouse-box">
+                        <img class="medal-img" data-report-click='{"spm":"3001.4296"}' src="https://csdnimg.cn/medal/github@240.png" alt="GitHub">
+                    </div>
+                </div>
+                <div class="icon-badge" title="持之以恒">
+                    <div class="mouse-box">
+                        <img class="medal-img" data-report-click='{"spm":"3001.4296"}' src="https://csdnimg.cn/medal/chizhiyiheng@240.png" alt="持之以恒">
+                    </div>
+                </div>
+                <div class="icon-badge" title="勤写标兵Lv2">
+                    <div class="mouse-box">
+                        <img class="medal-img" data-report-click='{"spm":"3001.4296"}' src="https://csdnimg.cn/medal/qixiebiaobing2@240.png" alt="勤写标兵Lv2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="profile-intro-name-boxOpration">
+        <div class="opt-letter-watch-box">
+        <a class="bt-button personal-letter" href="https://im.csdn.net/chat/qq_37958845" target="_blank" rel="noopener">私信</a>
+        </div>
+        <div class="opt-letter-watch-box"> 
+            <a class="personal-watch bt-button" id="btnAttent" >关注</a>  
+        </div>
+    </div>
+</div>
+ <div id="asideSearchArticle" class="aside-box">
+	<div class="aside-content search-comter">
+    <div class="aside-search aside-search-blog">         
+        <input type="text" class="input-serch-blog" name="" autocomplete="off" value="" id="search-blog-words" placeholder="搜博主文章">
+        <a class="btn-search-blog">
+                    <img src="//csdnimg.cn/cdn/content-toolbar/csdn-sou.png?v=1587021042">
+        </a>
+    </div>
+    </div>
+</div>
+
+
+<div id="asideHotArticle" class="aside-box">
+	<h3 class="aside-title">热门文章</h3>
+	<div class="aside-content">
+		<ul class="hotArticle-list">
+			<li>
+				<a href="https://blog.csdn.net/qq_37958845/article/details/82420976" target="_blank"  data-report-click='{"mod":"popu_541","spm":"1001.2101.3001.4139","dest":"https://blog.csdn.net/qq_37958845/article/details/82420976","ab":"new"}'>
+				错误: 找不到或无法加载主类 Test
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					<span class="read">29413</span>
+                </a>
+			</li>
+			<li>
+				<a href="https://blog.csdn.net/qq_37958845/article/details/106053760" target="_blank"  data-report-click='{"mod":"popu_541","spm":"1001.2101.3001.4139","dest":"https://blog.csdn.net/qq_37958845/article/details/106053760","ab":"new"}'>
+				在IDEA中，如何统计项目代码的总行数
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					<span class="read">8494</span>
+                </a>
+			</li>
+			<li>
+				<a href="https://blog.csdn.net/qq_37958845/article/details/118973512" target="_blank"  data-report-click='{"mod":"popu_541","spm":"1001.2101.3001.4139","dest":"https://blog.csdn.net/qq_37958845/article/details/118973512","ab":"new"}'>
+				免费使用正版 IDEA
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					<span class="read">1576</span>
+                </a>
+			</li>
+			<li>
+				<a href="https://blog.csdn.net/qq_37958845/article/details/105675131" target="_blank"  data-report-click='{"mod":"popu_541","spm":"1001.2101.3001.4139","dest":"https://blog.csdn.net/qq_37958845/article/details/105675131","ab":"new"}'>
+				Kafka发送消息和消费消息的方式
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					<span class="read">1420</span>
+                </a>
+			</li>
+			<li>
+				<a href="https://blog.csdn.net/qq_37958845/article/details/105725331" target="_blank"  data-report-click='{"mod":"popu_541","spm":"1001.2101.3001.4139","dest":"https://blog.csdn.net/qq_37958845/article/details/105725331","ab":"new"}'>
+				Zookeeper 如何实现数据一致性的？
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt="">
+					<span class="read">1355</span>
+                </a>
+			</li>
+		</ul>
+	</div>
+</div>
+<div id="asideCategory" class="aside-box flexible-box">
+    <h3 class="aside-title">分类专栏</h3>
+    <div class="aside-content">
+        <ul>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11266539.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11266539.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756724.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">源码分析</span>
+                    </span>
+                    <span class="count float-right">3篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11286345.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11286345.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756925.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">设计模式</span>
+                    </span>
+                </a>
+            </li>
+            <li class="indentation">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10985446.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10985446.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20190927151101105.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">Netty</span>
+                    </span>
+                    <span class="count float-right">1篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11254647.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11254647.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756930.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">响应式编程</span>
+                    </span>
+                    <span class="count float-right">2篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11230534.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11230534.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756913.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">网关</span>
+                    </span>
+                    <span class="count float-right">2篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11169101.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11169101.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">监控</span>
+                    </span>
+                    <span class="count float-right">1篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10282988.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10282988.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756923.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">架构</span>
+                    </span>
+                    <span class="count float-right">3篇</span>
+                </a>
+            </li>
+            <li class="indentation">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10282989.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10282989.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">架构基础</span>
+                    </span>
+                    <span class="count float-right">3篇</span>
+                </a>
+            </li>
+            <li class="indentation">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10282996.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10282996.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756757.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">高性能架构</span>
+                    </span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10012189.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10012189.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">Zookeeper</span>
+                    </span>
+                    <span class="count float-right">1篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9994876.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9994876.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20200511145352174.jpg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">软件的使用</span>
+                    </span>
+                    <span class="count float-right">9篇</span>
+                </a>
+            </li>
+            <li class="indentation">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9994930.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9994930.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20190927151132530.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">Centos的使用</span>
+                    </span>
+                    <span class="count float-right">1篇</span>
+                </a>
+            </li>
+            <li class="indentation">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9994895.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9994895.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20190927151101105.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">IDEA开发工具</span>
+                    </span>
+                    <span class="count float-right">3篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9977542.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9977542.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20200506143223804.jpg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">分布式基础</span>
+                    </span>
+                    <span class="count float-right">1篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9901306.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9901306.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20200413124147246.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">消息队列</span>
+                    </span>
+                    <span class="count float-right">3篇</span>
+                </a>
+            </li>
+            <li class="">
+                <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_7928691.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_7928691.html","ab":"new"}'>
+                    <img src="https://img-blog.csdnimg.cn/20200413123945829.jpg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                    <span class="title oneline">
+                        <span class="text">Java基础</span>
+                    </span>
+                    <span class="count float-right">8篇</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <p class="text-center">
+        <a class="flexible-btn" data-fbox="aside-archive"><img class="look-more" src="https://csdnimg.cn/release/blogv2/dist/pc/img/arrowDownWhite.png" alt=""></a>
+    </p>
+</div>
+<div id="asideNewComments" class="aside-box">
+    <h3 class="aside-title">最新评论</h3>
+    <div class="aside-content">
+        <ul class="newcomment-list">
+            <li>
+                <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19629071" data-report-click='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19629071","ab":"new"}' data-report-view='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19629071","ab":"new"}'>错误: 找不到或无法加载主类 Test</a>
+                <p class="comment ellipsis">
+                    <a href="https://blog.csdn.net/a_aaaabbbb_b" class="user-name" target="_blank">α粒子: </a>
+                    <span class="code-comments">真弱智，就是不想让别人学会是不？</span>
+                </p>
+            </li>
+            <li>
+                <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19629067" data-report-click='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19629067","ab":"new"}' data-report-view='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19629067","ab":"new"}'>错误: 找不到或无法加载主类 Test</a>
+                <p class="comment ellipsis">
+                    <a href="https://blog.csdn.net/a_aaaabbbb_b" class="user-name" target="_blank">α粒子: </a>
+                    <span class="code-comments">看了一眼就是类不能嵌套，就这么点事能让你说这么复杂是不？炫技是不？</span>
+                </p>
+            </li>
+            <li>
+                <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19628989" data-report-click='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19628989","ab":"new"}' data-report-view='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/82420976#comments_19628989","ab":"new"}'>错误: 找不到或无法加载主类 Test</a>
+                <p class="comment ellipsis">
+                    <a href="https://blog.csdn.net/a_aaaabbbb_b" class="user-name" target="_blank">α粒子: </a>
+                    <span class="code-comments">说人话行不行？</span>
+                </p>
+            </li>
+            <li>
+                <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_37958845/article/details/119275357#comments_19530816" data-report-click='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/119275357#comments_19530816","ab":"new"}' data-report-view='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/119275357#comments_19530816","ab":"new"}'>一、响应式编程基本介绍</a>
+                <p class="comment ellipsis">
+                    <a href="https://blog.csdn.net/qq_47281776" class="user-name" target="_blank">茶色...: </a>
+                    <span class="code-comments">666，膜拜大佬<img src="https://g.csdnimg.cn/static/face/emoji/008.png" alt='表情包' ></span>
+                </p>
+            </li>
+            <li>
+                <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_37958845/article/details/108476749#comments_19179339" data-report-click='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/108476749#comments_19179339","ab":"new"}' data-report-view='{"mod":"popu_542","spm":"1001.2101.3001.4231","dest":"https://blog.csdn.net/qq_37958845/article/details/108476749#comments_19179339","ab":"new"}'>高性能架构模式(一)：数据库集群如何实现高性能？</a>
+                <p class="comment ellipsis">
+                    <a href="https://blog.csdn.net/benpao_1990" class="user-name" target="_blank">benpao_1990: </a>
+                    <span class="code-comments">都比较麻烦，不管是读写分离还是分库分表，都射及到业务代码的修改。</span>
+                </p>
+            </li>
+        </ul>
+    </div>
+</div>
+<div id="asideNewNps" class="aside-box common-nps-box">
+    <h3 class="aside-title">您愿意向朋友推荐“博客详情页”吗？</h3>
+    <div class="aside-content">
+        <ul class="newnps-list">
+            <li class="newnps-item" data-type="强烈不推荐">
+                <div class="newnps-img-box">
+                    <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel1.png" alt="">
+                    <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey1.png" alt="">
+                </div>
+                <div class="newnps-text">强烈不推荐</div>
+            </li>
+            <li class="newnps-item" data-type="不推荐">
+                <div class="newnps-img-box">
+                    <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel2.png" alt="">
+                    <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey2.png" alt="">
+                </div>
+                <div class="newnps-text">不推荐</div>
+            </li>
+            <li class="newnps-item" data-type="一般般">
+                <div class="newnps-img-box">
+                    <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel3.png" alt="">
+                    <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey3.png" alt="">
+                </div>
+                <div class="newnps-text">一般般</div>
+            </li>
+            <li class="newnps-item" data-type="推荐">
+                <div class="newnps-img-box">
+                    <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel4.png" alt="">
+                    <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey4.png" alt="">
+                </div>
+                <div class="newnps-text">推荐</div>
+            </li>
+            <li class="newnps-item" data-type="强烈推荐">
+                <div class="newnps-img-box">
+                    <img class="newnps-img active" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeel5.png" alt="">
+                    <img class="newnps-img default" src="https://csdnimg.cn/release/blogv2/dist/pc/img/npsFeelGrey5.png" alt="">
+                </div>
+                <div class="newnps-text">强烈推荐</div>
+            </li>
+        </ul>
+        <div class="newnps-form-box">
+        <div class="newnps-form">
+            <input type="text" placeholder="请输入建议或反馈后点击提交" class="newnps-input">
+            <span class="newnps-btn">提交</span>
+        </div>
+        </div>
+    </div>
+</div>
+<div id="asideArchive" class="aside-box" style="display:block!important; width:300px;">
+    <h3 class="aside-title">最新文章</h3>
+    <div class="aside-content">
+        <ul class="inf_list clearfix">
+            <li class="clearfix">
+            <a href="https://blog.csdn.net/qq_37958845/article/details/121703791" target="_blank" data-report-click='{"mod":"popu_382","spm":"1001.2101.3001.4136","dest":"https://blog.csdn.net/qq_37958845/article/details/121703791","ab":"new"}' data-report-view='{"mod":"popu_382","dest":"https://blog.csdn.net/qq_37958845/article/details/121703791","ab":"new"}'>Mac 安装 Java 反编译工具 JD-GUI</a>
+            </li>
+            <li class="clearfix">
+            <a href="https://blog.csdn.net/qq_37958845/article/details/121684483" target="_blank" data-report-click='{"mod":"popu_382","spm":"1001.2101.3001.4136","dest":"https://blog.csdn.net/qq_37958845/article/details/121684483","ab":"new"}' data-report-view='{"mod":"popu_382","dest":"https://blog.csdn.net/qq_37958845/article/details/121684483","ab":"new"}'>MAC 上的 PostMan 汉化</a>
+            </li>
+            <li class="clearfix">
+            <a href="https://blog.csdn.net/qq_37958845/article/details/119966533" target="_blank" data-report-click='{"mod":"popu_382","spm":"1001.2101.3001.4136","dest":"https://blog.csdn.net/qq_37958845/article/details/119966533","ab":"new"}' data-report-view='{"mod":"popu_382","dest":"https://blog.csdn.net/qq_37958845/article/details/119966533","ab":"new"}'>Mybatis 框架基本介绍</a>
+            </li>
+        </ul>
+        <div class="archive-bar"></div>
+        <div class="archive-box">
+                <div class="archive-list-item"><a href="https://blog.csdn.net/qq_37958845?type=blog&amp;year=2021&amp;month=12" target="_blank" data-report-click='{"mod":"popu_538","spm":"1001.2101.3001.4138","ab":"new","dest":"https://blog.csdn.net/qq_37958845?type=blog&amp;year=2021&amp;month=12"}'><span class="year">2021年</span><span class="num">16篇</span></a></div>
+                <div class="archive-list-item"><a href="https://blog.csdn.net/qq_37958845?type=blog&amp;year=2020&amp;month=11" target="_blank" data-report-click='{"mod":"popu_538","spm":"1001.2101.3001.4138","ab":"new","dest":"https://blog.csdn.net/qq_37958845?type=blog&amp;year=2020&amp;month=11"}'><span class="year">2020年</span><span class="num">17篇</span></a></div>
+                <div class="archive-list-item"><a href="https://blog.csdn.net/qq_37958845?type=blog&amp;year=2019&amp;month=03" target="_blank" data-report-click='{"mod":"popu_538","spm":"1001.2101.3001.4138","ab":"new","dest":"https://blog.csdn.net/qq_37958845?type=blog&amp;year=2019&amp;month=03"}'><span class="year">2019年</span><span class="num">1篇</span></a></div>
+                <div class="archive-list-item"><a href="https://blog.csdn.net/qq_37958845?type=blog&amp;year=2018&amp;month=09" target="_blank" data-report-click='{"mod":"popu_538","spm":"1001.2101.3001.4138","ab":"new","dest":"https://blog.csdn.net/qq_37958845?type=blog&amp;year=2018&amp;month=09"}'><span class="year">2018年</span><span class="num">6篇</span></a></div>
+        </div>
+    </div>
+</div>
+	<div id="footerRightAds" class="isShowFooterAds">
+		<div class="aside-box">
+			<div id="kp_box_57" data-pid="57"><iframe  src="https://kunpeng-sc.csdnimg.cn/?timestamp=1645783940/#/preview/9030?positionId=57&queryWord=&spm=1001.2101.3001.5001&articleId=105725331&hk=1" frameborder="0" width= "300px"  height= "600px" scrolling="no" ></iframe><img class="pre-img-lasy"  data-src="https://kunyu.csdn.net/1.png?p=57&a=5760&c=9030&k=&spm=1001.2101.3001.5001&articleId=105725331&hk=1&d=1&t=3&u=b7fe7208e1d34a3cb64b483b9d1c2209" style="display: block;width: 0px;height: 0px;"></div>
+		</div>
+	</div>
+    <!-- 详情页显示目录 -->
+<!--文章目录-->
+<div id="asidedirectory" class="aside-box">
+    <div class='groupfile' id="directory">
+        <h3 class="aside-title">目录</h3>
+        <div class="align-items-stretch group_item">
+            <div class="pos-box">
+            <div class="scroll-box">
+                <div class="toc-box"></div>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+</aside>
+<script>
+	$("a.flexible-btn").click(function(){
+		$(this).parents('div.aside-box').removeClass('flexible-box');
+		$(this).parents("p.text-center").remove();
+	})
+</script>
+<script type="text/javascript"  src="https://g.csdnimg.cn/user-tooltip/2.5/user-tooltip.js"></script>
+<script type="text/javascript"  src="https://g.csdnimg.cn/user-medal/1.0.7/user-medal.js"></script>    </div>
+<div class="recommend-right align-items-stretch clearfix" id="rightAside" data-type="recommend">
+    <aside class="recommend-right_aside">
+        <div id="recommend-right" >
+                        <div class='flex-column aside-box groupfile' id="groupfile">
+                <div class="groupfile-div">
+                <h3 class="aside-title">目录</h3>
+                <div class="align-items-stretch group_item">
+                    <div class="pos-box">
+                        <div class="scroll-box">
+                            <div class="toc-box"></div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+                <div id="recommendAdBox">
+                    <div id="kp_box_479" data-pid="479"><iframe  src="https://kunpeng-sc.csdnimg.cn/?timestamp=1645783940/#/preview/9030?positionId=479&queryWord=&spm=1001.2101.3001.4834&articleId=105725331&hk=1" frameborder="0" width= "300px"  height= "600px" scrolling="no" ></iframe><img class="pre-img-lasy"  data-src="https://kunyu.csdn.net/1.png?p=479&a=5760&c=9030&k=&spm=1001.2101.3001.4834&articleId=105725331&hk=1&d=1&t=3&u=1b3eeb2376df45d782c04400f76b2555" style="display: block;width: 0px;height: 0px;"></div>
+                </div>
+            <div class='aside-box kind_person d-flex flex-column'>
+                    <h3 class="aside-title">分类专栏</h3>
+                    <div class="align-items-stretch kindof_item" id="kind_person_column">
+                        <div class="aside-content">
+                            <ul>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11266539.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11266539.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756724.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">源码分析</span>
+                                        </span>
+                                        <span class="count float-right">3篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11286345.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11286345.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756925.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">设计模式</span>
+                                        </span>
+                                    </a>
+                                </li>
+                                <li class="indentation">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10985446.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10985446.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20190927151101105.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">Netty</span>
+                                        </span>
+                                        <span class="count float-right">1篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11254647.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11254647.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756930.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">响应式编程</span>
+                                        </span>
+                                        <span class="count float-right">2篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11230534.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11230534.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756913.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">网关</span>
+                                        </span>
+                                        <span class="count float-right">2篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_11169101.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_11169101.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">监控</span>
+                                        </span>
+                                        <span class="count float-right">1篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10282988.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10282988.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756923.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">架构</span>
+                                        </span>
+                                        <span class="count float-right">3篇</span>
+                                    </a>
+                                </li>
+                                <li class="indentation">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10282989.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10282989.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">架构基础</span>
+                                        </span>
+                                        <span class="count float-right">3篇</span>
+                                    </a>
+                                </li>
+                                <li class="indentation">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10282996.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10282996.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756757.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">高性能架构</span>
+                                        </span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_10012189.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_10012189.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20201014180756928.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">Zookeeper</span>
+                                        </span>
+                                        <span class="count float-right">1篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9994876.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9994876.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20200511145352174.jpg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">软件的使用</span>
+                                        </span>
+                                        <span class="count float-right">9篇</span>
+                                    </a>
+                                </li>
+                                <li class="indentation">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9994930.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9994930.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20190927151132530.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">Centos的使用</span>
+                                        </span>
+                                        <span class="count float-right">1篇</span>
+                                    </a>
+                                </li>
+                                <li class="indentation">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9994895.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9994895.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20190927151101105.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">IDEA开发工具</span>
+                                        </span>
+                                        <span class="count float-right">3篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9977542.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9977542.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20200506143223804.jpg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">分布式基础</span>
+                                        </span>
+                                        <span class="count float-right">1篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_9901306.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_9901306.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20200413124147246.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">消息队列</span>
+                                        </span>
+                                        <span class="count float-right">3篇</span>
+                                    </a>
+                                </li>
+                                <li class="">
+                                    <a class="clearfix" target="_blank" href="https://blog.csdn.net/qq_37958845/category_7928691.html" data-report-click='{"mod":"popu_537","spm":"1001.2101.3001.4137","strategy":"pc付费专栏左侧入口","dest":"https://blog.csdn.net/qq_37958845/category_7928691.html","ab":"new"}'>
+                                        <img src="https://img-blog.csdnimg.cn/20200413123945829.jpg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://img-blog.csdnimg.cn/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'">
+                                        <span class="title oneline">
+                                            <span class="text">Java基础</span>
+                                        </span>
+                                        <span class="count float-right">8篇</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div class="recommend-right1  align-items-stretch clearfix" id="rightAsideConcision" data-type="recommend">
+    <aside class="recommend-right_aside">
+        <div id="recommend-right-concision" >
+            <div class='flex-column aside-box groupfile' id="groupfileConcision">
+                <div class="groupfile-div1">
+                <h3 class="aside-title">目录</h3>
+                <div class="align-items-stretch group_item">
+                    <div class="pos-box">
+                        <div class="scroll-box">
+                            <div class="toc-box"></div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+</div>
+<div class="mask-dark"></div>
+<script src="https://csdnimg.cn/public/sandalstrap/1.4/js/sandalstrap.min.js"></script>
+<div class="skin-boxshadow"></div>
+<div class="directory-boxshadow"></div>
+<div id="rewardNew" class="reward-popupbox-new">
+	<p class="rewad-title">打赏作者<span class="reward-close"><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/closeBt.png"></span></p>
+	<dl class="profile-box">
+		<dd>
+		<a href="https://blog.csdn.net/qq_37958845" data-report-click='{"mod":"popu_379","dest":"https://blog.csdn.net/qq_37958845","ab":"new"}'>
+			<img src="https://profile.csdnimg.cn/C/D/2/3_qq_37958845" class="avatar_pic">
+		</a>
+		</dd>
+		<dt>
+			<p class="blog-name">梦想的优惠券</p>
+			<p class="blog-discript">你的鼓励将是我创作的最大动力</p>
+		</dt>
+	</dl>
+	<div class="reward-box-new">
+			<div class="reward-content"><div class="reward-right"></div></div>
+	</div>
+	<div class="money-box">
+				<span class="choose-money choosed" data-id="2">¥2</span>
+				<span class="choose-money " data-id="4">¥4</span>
+				<span class="choose-money " data-id="6">¥6</span>
+				<span class="choose-money " data-id="10">¥10</span>
+				<span class="choose-money " data-id="20">¥20</span>
+				<input id="customizeMoney" class="customize-money" name="" type="" value="" placeholder="自定义"/>
+				<div class="customize-tip">输入1-500的整数</div>
+	</div>
+	<div class="pay-box">
+		<div class="pay-type-blance pay-type active" data-type="blance">
+			<img class="unchoose" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUnChoose.png" alt="">
+			<img class="choose"src="https://csdnimg.cn/release/blogv2/dist/pc/img/newChoose.png" alt="">
+			<span class="pay-type-name">余额支付</span>
+			<span class="pay-type-num">(余额：-- )</span>
+		</div>
+		<div class="pay-type-money pay-type" data-type="money">
+			<img class="unchoose" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUnChoose.png" alt="">
+			<img class="choose"src="https://csdnimg.cn/release/blogv2/dist/pc/img/newChoose.png" alt="">
+			<span class="pay-type-name">扫码支付</span>
+		</div>
+	</div>
+	<div class="sure-box">
+		<div class="sure-box-money">
+			<div class="code-box">
+				<div class="code-num-box">
+					<span class="code-name">扫码支付：</span><span class="code-num">¥2</span>
+				</div>
+				<div class="code-img-box">
+					<div class="renovate">
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/pay-time-out.png">
+					<span>获取中</span>
+					</div>
+				</div>
+				<div class="code-pay-box">
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/newWeiXin.png" alt="">
+					<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/newZhiFuBao.png" alt="">
+					<span>扫码支付</span>
+				</div>
+			</div>
+		</div>
+		<div class="sure-box-blance">
+			<p class="tip">您的余额不足，请更换扫码支付或<a target="_blank" data-report-click='{"mod":"1597646289_003","spm":"1001.2101.3001.4302"}' href="https://i.csdn.net/#/wallet/balance/recharge?utm_source=RewardVip" class="go-invest">充值</a></p>
+			<p class="is-have-money"><a class="reward-sure">打赏作者</a></p>
+		</div>
+	</div>
+</div>
+<div class="pay-code">
+    <div class="pay-money">实付<span class="pay-money-span" data-nowprice='' data-oldprice=''>元</span></div>
+    <div class="content-blance"><a class="blance-bt" href="javascript:;">使用余额支付</a></div>
+    <div class="content-code">
+    <div id="payCode" data-id="">
+            <div class="renovate">
+                <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/pay-time-out.png">
+                <span>点击重新获取</span>
+            </div>
+        </div>
+        <div class="pay-style"><span><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/weixin.png"></span><span><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/zhifubao.png"></span><span><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/jingdong.png"></span><span class="text">扫码支付</span></div>
+    </div>
+    <div class="bt-close"><svg t="1567152543821" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="10924" xmlns:xlink="http://www.w3.org/1999/xlink" width="12" height="12"><defs><style type="text/css"></style></defs><path d="M512 438.378667L806.506667 143.893333a52.032 52.032 0 1 1 73.6 73.621334L585.621333 512l294.485334 294.485333a52.074667 52.074667 0 0 1-73.6 73.642667L512 585.621333 217.514667 880.128a52.053333 52.053333 0 1 1-73.621334-73.642667L438.378667 512 143.893333 217.514667a52.053333 52.053333 0 1 1 73.621334-73.621334L512 438.378667z" fill="" p-id="10925"></path></svg></div>
+    <!-- <p style="margin-top: 8px;font-size: 14px;" class="text-center">支付成功即可阅读</p> -->
+    <div class="pay-balance">
+    <input type="radio" class="pay-code-radio" data-type="details"> 
+    <span class="span">钱包余额</span>
+    <span class="balance" style="color:#FC5531;font-size:14px;">0</span>  
+    <div class="pay-code-tile">
+        <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/pay-help.png" alt="">
+        <div class="pay-code-content">
+            <div class="span">
+                <p class="title">抵扣说明：</p>
+                <p> 1.余额是钱包充值的虚拟货币，按照1:1的比例进行支付金额的抵扣。<br> 2.余额无法直接购买下载，可以购买VIP、C币套餐、付费专栏及课程。</p>
+            </div>
+        </div>
+    </div>
+    </div>
+    <a class="pay-balance-con" href="https://i.csdn.net/#/wallet/balance/recharge" target="_blank"><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/recharge.png" alt=""><span  >余额充值</span></a>
+</div>
+<div style="display:none;">
+	<img src="" onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window.location.href="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);'>
+</div>
+<div class="keyword-dec-box" id="keywordDecBox"></div>
+</body>
+<script src="https://csdnimg.cn/release/blogv2/dist/components/js/pc_wap_highlight-7e7de84184.min.js" type="text/javascript"></script>
+<script src="https://csdnimg.cn/release/blogv2/dist/components/js/pc_wap_common-fbcbe8567e.min.js" type="text/javascript"></script>
+<script src="https://csdnimg.cn/release/blogv2/dist/components/js/edit_copy_code-9c83e748f5.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/dracula.css">
+<script src="https://g.csdnimg.cn/user-accusation/1.0.5/user-accusation.js" type="text/javascript" ></script>
+<script>
+ // 全局声明
+ if (window.csdn === undefined) {
+      window.csdn = {};
+    }
+    window.csdn.sideToolbar = {
+        options: {
+            report:{
+                isShow: true,
+            },
+            qr: {
+                isShow: false,
+            },
+            guide: {
+                isShow: true
+            }
+        }
+    }
+    $(function(){
+        $(document).on('click',"a.option-box[data-type='report']",function() {
+            window.csdn.userLogin.loadAjax(function(res){
+                window.csdn.feedback({
+                    "type":'blog',
+                    "rtype":'article',
+                    "rid":articleId,
+                    "reportedName":username,
+                    "submitOptions":{
+                        "title":articleTitle,
+                        "contentUrl":articleDetailUrl
+                    },
+                    "callback":function(){
+                        showToast({
+                            text: "感谢您的举报，我们会尽快审核！",
+                            bottom: '10%', 
+                            zindex: 9000, 
+                            speed: 500,
+                            time: 1500
+                        });
+                    }
+                })
+            })
+        });
+    })
+</script>
+    <script src="https://g.csdnimg.cn/baidu-search/1.0.10/baidu-search.js"  type="text/javascript"></script>
+<script src="https://csdnimg.cn/release/download/old_static/js/qrcode.js"></script>
+<script src="https://g.csdnimg.cn/lib/qrcode/1.0.0/qrcode.min.js"></script>
+<script src="https://g.csdnimg.cn/user-ordercart/3.0.0/user-ordercart.js" type="text/javascript"></script>
+<script src="https://g.csdnimg.cn/user-ordertip/4.1.3/user-ordertip.js" type="text/javascript" ></script>
+<script src="https://g.csdnimg.cn/order-payment/3.1.0/order-payment.js" type="text/javascript" ></script>
+<script src="https://csdnimg.cn/release/blogv2/dist/pc/js/common-a1dfbf1dc3.min.js" type="text/javascript"></script>
+<script src="https://csdnimg.cn/release/blogv2/dist/pc/js/detail-c8f8c22447.min.js" type="text/javascript"></script>
+<script src="https://csdnimg.cn/release/blogv2/dist/pc/js/column-06ad1dc2ca.min.js" type="text/javascript"></script>
+<script src="https://g.csdnimg.cn/side-toolbar/3.1/side-toolbar.js" type="text/javascript"></script>
+<script src="https://g.csdnimg.cn/copyright/1.0.4/copyright.js" type="text/javascript"></script>
+<script>
+    $(".MathJax").remove();
+    if ($('div.markdown_views pre.prettyprint code.hljs').length > 0) {
+        $('div.markdown_views')[0].className = 'markdown_views';
+    }
+</script>
+<script type="text/javascript" src="https://csdnimg.cn/release/blog_mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+            "HTML-CSS": {
+                    linebreaks: { automatic: true, width: "94%container" },
+                    imageFont: null
+            },
+            tex2jax: {
+                preview: "none",
+                ignoreClass:"title-article"
+            },
+            mml2jax: {
+                preview: 'none'
+            }
+    });
+</script>
+<script type="text/javascript" crossorigin src="https://g.csdnimg.cn/common/csdn-login-box/csdn-login-box.js"></script></html>
