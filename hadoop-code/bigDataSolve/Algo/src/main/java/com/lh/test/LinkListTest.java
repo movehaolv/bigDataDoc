@@ -13,7 +13,8 @@ public class LinkListTest {
         sl.insert("姚明");
         sl.insert("科比");
         sl.insert("麦迪");
-        sl.insert(1,"詹姆斯");
+        sl.insert(3,"詹姆斯");
+        sl.clear();
 
         for (String s : sl) {
             System.out.println(s);

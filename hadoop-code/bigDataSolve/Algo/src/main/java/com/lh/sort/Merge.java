@@ -58,7 +58,7 @@ public class Merge {
      */
     private static void merge(Comparable[] a, int lo, int mid, int hi) {
         //定义三个指针
-        int i=lo;
+        int i=lo;  // 注意 这个i=lo；存的时候要和原数组对应位置,这样最后copy时位置才能对应
         int p1=lo;
         int p2=mid+1;
 

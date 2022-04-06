@@ -26,6 +26,7 @@ public class SequenceListTest {
         //测试删除
         String removeResult = sl.remove(0);
         System.out.println("删除的元素是："+removeResult);
+
         //测试清空
         sl.clear();
         System.out.println("清空后的线性表中的元素个数为:"+sl.length());

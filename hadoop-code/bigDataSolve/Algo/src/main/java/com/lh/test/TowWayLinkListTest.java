@@ -13,7 +13,7 @@ public class TowWayLinkListTest {
         sl.insert("姚明");
         sl.insert("科比");
         sl.insert("麦迪");
-        sl.insert(1,"詹姆斯");
+        sl.insert(2,"詹姆斯");
 
         for (String s : sl) {
             System.out.println(s);

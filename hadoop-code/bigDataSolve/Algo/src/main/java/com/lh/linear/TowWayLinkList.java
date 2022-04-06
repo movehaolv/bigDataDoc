@@ -40,8 +40,8 @@ public class TowWayLinkList<T> implements Iterable<T> {
     //清空链表
     public void clear(){
         this.head.next=null;
-        this.head.pre=null;
-        this.head.item=null;
+//        this.head.pre=null;  head.pre和head.item可不写
+//        this.head.item=null;
         this.last=null;
         this.N=0;
     }

@@ -33,13 +33,15 @@ public class FastSlowTest {
         //定义两个指针
         Node<String> fast = first;
         Node<String> slow = first;
+        int count = 0;
         //使用两个指针遍历链表，当快指针指向的结点没有下一个结点了，就可以结束了，结束之后，慢指针指向的结点就是中间值
         while(fast!=null &&fast.next!=null){
+            count++;
             //变化fast的值和slow的值
             fast = fast.next.next;
             slow=slow.next;
         }
-
+        System.out.println(count);
         return slow.item;
     }
 
