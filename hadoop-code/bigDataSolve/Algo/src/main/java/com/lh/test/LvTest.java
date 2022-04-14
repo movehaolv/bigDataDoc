@@ -3,9 +3,14 @@ package com.lh.test;
 
 
 
-import com.lh.linear.LinkList;
+import com.lh.linear.Queue;
+import com.lh.symbol.OrderSymbolTable;
 
+import java.sql.Struct;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @Author: lvhao-004
@@ -13,329 +18,316 @@ import java.util.Iterator;
  * @Date: Create in 13:41 2021/9/21          Comparable[] a = {6,5,2,1,3,4,5};
  */
 
-
-
 public class LvTest{
 
     public static void main(String[] args) {
+//        BinTree<Integer, String> tree = new BinTree();
+//        //测试插入
+//        tree.put(20,"20");
+//        tree.put(10,"10");
+//        tree.put(8,"8");
+//        tree.put(6,"6");
+//        tree.put(9,"9");
+//        tree.put(16,"16");
+//        tree.put(14,"14");
+//        tree.put(17,"17");
+//        tree.put(12,"12");
+//        tree.put(25,"25");
+////        tree.put(23,"23");
+////        tree.put(26,"26");
+//
+//
+//
+//
+//        Queue<Integer> keys = tree.midEr();
+//        for (Integer key : keys) {
+//            String value = tree.get(key);
+//            System.out.println(key+"----"+value);
+////        }
 
-        TwoLinkedList<String> sl = new TwoLinkedList<>();
-        sl.insert("姚明");
-        sl.insert("科比");
-        sl.insert("麦迪");
-        sl.insert(2,"詹姆斯");
+//    }
 
-        for (String s : sl) {
-            System.out.println(s);
-        }
-
-        System.out.println("--------------------------------------");
-        System.out.println("第一个元素是："+sl.getFirst());
-        System.out.println("最后一个元素是："+sl.getLast());
-
-        System.out.println("------------------------------------------");
-
-        //测试获取
-        String getResult = sl.get(1);
-        System.out.println("获取索引1处的结果为："+getResult);
-        //测试删除
-        String removeResult = sl.remove(0);
-        System.out.println("删除的元素是："+removeResult);
-        //测试清空
-        sl.clear();
-        System.out.println("清空后的线性表中的元素个数为:"+sl.length());
-
-
-
-
-    }
-
-    static class TwoLinkedList<T> implements Iterable<T>{
-        private Node head;
-        private Node last;
-        private int N;
-
-        public TwoLinkedList() {
-            head = new Node(null, null, null);
-            last = null;
-            N = 0;
-        }
-
-        public int length(){
-            return N;
-        }
-
-        public void clear(){
-            head.next = null;
-            last = null;
-            N = 0;
-        }
-
-        public Boolean isEmpty(){
-            return N == 0;
-        }
-
-        public T get(int i){
-            Node cur = head;
-            for(int index=0;index<=i;index++){
-                cur = cur.next;
-            }
-            return cur.item;
-        }
-
-        public void insert(T item){
-            if(isEmpty()){
-                Node newNode = new Node(head, item, null);
-                head.next = newNode;
-                last = newNode;
-            }else {
-                Node oldLast = last;
-                Node newNode = new Node(oldLast, item, null);
-                oldLast.next = newNode;
-                last = newNode;
-            }
-            N++;
-        }
-
-        public void insert(int i, T item){
-            Node cur = head;
-            if(i==N){
-                insert(item);
-            }else if(i<N) {
-                for (int index = 0; index <= i; index++) {
-                    cur = cur.next;
-                }
-                Node pre = cur.pre;
-                Node next = cur;
-                Node newNode = new Node(pre, item, next);
-                pre.next = newNode;
-                next.pre = newNode;
-            }
-            N++;
-        }
-
-        public T remove(int i){ // -----------------------------------------------------+++++++++++++++
-            if(N-1 <i){
-                return null;
-            }else if(i==N-1){ // 删除的是最后一个元素
-                Node pre = last.pre;
-                pre.next = null;
-                last.pre = null;
-                last = pre;
-                N--;
-                return last.item;
-            }else {
-                Node cur = head;
-                for (int index = 0; index <= i; index++) {
-                    cur = cur.next;
-                }
-                Node pre = cur.pre;
-                Node next = cur.next;
-                pre.next = next;
-                next.pre = pre;
-                N--;
-                return cur.item;
-            }
-
-        }
-
-        public int indexOf(T item){
-            Node cur = head;
-            for(int i=0;i<N;i++){
-                cur = cur.next;
-                if(cur.item.equals(item)){
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        public T getFirst(){
-            if(N==0){
-                return null;
-            }
-            return head.next.item;
-        }
-
-        public T getLast(){
-            if (isEmpty()){
-                return null;
-            }
-            return last.item;
-        }
-
-
-
-
-        class Node{
-            private Node pre;
-            private T item;
-            private Node next;
-
-            public Node(Node pre, T item, Node next) {
-                this.pre = pre;
-                this.item = item;
-                this.next = next;
-            }
-        }
-
-        @Override
-        public Iterator<T> iterator() {
-            return new TWIterator();
-        }
-
-        class TWIterator<T> implements Iterator{
-
-            private Node n;
-
-            public TWIterator() {
-                this.n = head;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return n.next != null;
-            }
-
-            @Override
-            public Object next() {
-                n = n.next;
-                return n.item;
-            }
-        }
-
+// down down up down down up up
+        PageFold<String> stringPageFold = new PageFold<>();
+        stringPageFold.printTree(stringPageFold.createTree(3));
 
     }
 
 
 
-    static class LinkedList<T> implements Iterable<T>{
-        private Node head;
-        int N;
 
-        private class Node<T>{
-            T item;
-            Node next;
+}
 
-            private Node(T item, Node next) {
-                this.item = item;
-                this.next = next;
+class PageFold<T>{
+
+    public void printTree(Node<T> n){
+        if(n==null){
+            return;
+        }
+        if(n.left != null){
+            printTree(n.left);
+        }
+        System.out.println(n.item);
+        if(n.left != null){
+            printTree(n.right);
+        }
+
+    }
+
+    public Node<String> createTree(int n){
+        Node<String> root = null;
+        for(int i=0;i<n;i++) {
+            if (i == 0) {
+                root = new Node<>("down", null, null);
+                continue;
             }
-        }
-
-        private LinkedList() {
-            this.head = new Node(null, null);
-            N = 0;
-        }
-
-        public Boolean isEmpty(){
-            return N == 0;
-        }
-
-        public int length(){
-            return N;
-        }
-
-        public T get(int index){
-            Node<T> cur = head;
-            for(int i=0;i<=index;i++){
-                cur = cur.next;
+            Queue<Node<String>> queue = new Queue<>();
+            queue.enqueue(root);
+            while (!queue.isEmpty()){
+                Node<String> x = queue.dequeue();
+                if(x.left != null){
+                    queue.enqueue(x.left);
+                }
+                if(x.right != null){
+                    queue.enqueue(x.right);
+                }
+                if(x.left ==null && x.right == null){
+                    x.left = new Node<>("down", null, null);
+                    x.right = new Node<>("up", null, null);
+                }
             }
-            return cur.item;
+
+        }
+        return root;
+
+    }
+
+    static class Node<T>{
+        T item;
+        Node<T> left;
+        Node<T> right;
+
+        public Node(T item, Node<T> left, Node<T> right) {
+            this.item = item;
+            this.left = left;
+            this.right = right;
+        }
+    }
+}
+
+
+class BinTree<K extends Comparable<K>, V>{
+
+    Node root;
+    int N;
+
+    private class Node{
+        K key;
+        V val;
+        Node left;
+        Node right;
+
+        public Node(K key, V val, Node left, Node right) {
+            this.key = key;
+            this.val = val;
+            this.left = left;
+            this.right = right;
+        }
+    }
+
+    public BinTree() {
+        root = null;
+        N = 0;
+    }
+
+    public int maxDepth(){
+
+        return maxDepth(root);
+    }
+
+    public int maxDepth(Node n){
+        if(n==null){
+            return 0;
         }
 
-        public void insert(T item){
-            Node cur = head;
-            while(cur.next != null){
-                cur = cur.next;
-            }
-            Node nextNode = new Node(item, null);
-            cur.next = nextNode;
+        int max = 0;
+        int maxLeft = 0;
+        int maxRight = 0;
+
+        if(n.left != null){
+            maxLeft = maxDepth(n.left);
+        }
+        if(n.right != null){
+            maxRight = maxDepth(n.right);
+        }
+
+        max = maxLeft > maxRight?maxLeft+1:maxRight+1;
+
+        return max;
+    }
+
+
+
+    public List<Integer> max(){
+        if(root == null){
+            return null;
+        }
+        List<Integer> list = new ArrayList<>();
+        max(root, 1, list);
+        return list;
+    }
+
+    public void max(Node n,int sum, List<Integer> list){
+        if(n.left == null && n.right == null){
+            list.add(sum);
+            return;
+        }
+        if(n.left != null){
+            max(n.left, sum+1, list);
+        }
+        if(n.right != null){
+            max(n.right, sum+1, list);
+        }
+
+    }
+
+    public Queue<V> ciEnr(){
+        Queue<Node> keys = new Queue<>();
+        Queue<V> values = new Queue<>();
+        if(root == null){
+            return null;
+        }
+        keys.enqueue(root);
+        ciEnr(keys, values);
+        return values;
+    }
+
+    public void ciEnr(Queue<Node> keys, Queue<V> values){
+        if(keys.isEmpty()){
+            return;
+        }
+        Node n = keys.dequeue();
+        values.enqueue(n.val);
+        if(n.left != null){
+            keys.enqueue(n.left);
+        }
+        if(n.right != null){
+            keys.enqueue(n.right);
+        }
+        ciEnr(keys, values);
+    }
+
+    public int size(){
+        return N;
+    }
+
+    public void put(K key, V val){
+        root = put(root, key, val);
+    }
+
+    public Node put(Node n,K key, V val){
+        if(n == null){
             N++;
+            return new Node(key, val, null, null);
         }
 
-        public void insert(int index, T item){
-            Node pre = head;
-            for(int i=0;i<index;i++){
-                pre = pre.next;
-            }
-            Node cur = new Node(item, pre.next);
-            pre.next = cur;
-            N++;
+        int comp = n.key.compareTo(key);
+        if(comp < 0){
+            n.right = put(n.right, key, val);
+        }else if(comp > 0) {
+            n.left = put(n.left, key, val);
+        }else{
+            n.val = val;
         }
 
-        public T remove(int index){
-            Node<T> pre = head;
-            for(int i=0;i<index;i++){
-                pre = pre.next;
-            }
-            Node<T> cur = pre.next;
-            pre.next = cur.next;
+        return n;
+    }
+
+    public V get(K key){
+         return get(root, key);
+    }
+    public V get(Node n, K key){
+        if(n == null){
+            return null;
+        }
+        int com = key.compareTo(n.key);
+        if(com < 0){
+            return get(n.left, key);
+        }else if(com > 0){
+            return get(n.right, key);
+        }else {
+            return n.val;
+        }
+    }
+
+    public void delete(K key){
+        root = delete(root, key);
+    }
+
+    public Node delete(Node x, K key){
+        if(x == null){
+            return x;
+        }
+        int com = x.key.compareTo(key);
+        if(com > 0){
+            x.left = delete(x.left, key);
+        }else if(com < 0){
+            x.right = delete(x.right, key);
+        }else {
             N--;
-            return cur.item;
-        }
 
-        public int indexOf(T item){
-            Node cur = head;
-            for(int i=0;i<N;i++){
-                cur = cur.next;
-                if(cur.item.equals(item)){
-                    return i;
+            if(x.left == null){
+                return x.right;
+            }
+            if(x.right == null){
+                return x.left;
+            }
+
+            Node n = x.right;
+            Node minNode = null;
+            while (n.left !=null){
+                if(n.left.left == null){
+                    minNode = n.left;
+                    n.left = null;
+
+                }else{
+                    n = n.left;
                 }
             }
-            return -1;
+
+            minNode.left = x.left;
+            minNode.right = x.right;
+
+            return minNode;
+
         }
+        return x;
 
-        public void clear(){
-            N = 0;
+    }
+
+    public Queue<K> midEr(){
+        Queue<K> keys = new Queue<>();
+        midEr(root, keys);
+        return keys;
+    }
+
+    public void midEr(Node n, Queue<K> keys){
+//        if(n == null){
+//            System.out.println("aaaaa");
+//            return;
+//        }
+        if(n.left != null){
+            midEr(n.left, keys);
         }
-
-        public Node reverse(Node cur){
-            if(cur.next == null){
-                head.next = cur;
-                return cur;
-            }
-            Node pre = reverse(cur.next);
-            pre.next = cur;
-            cur.next = null;
-            return cur;
-        }
-
-        public void reverse(){
-            if(N==0){
-                return;
-            }
-            reverse(head.next);
-        }
-
-
-        @Override
-        public Iterator<T> iterator() {
-            return new LIterator();
-        }
-
-        class LIterator implements Iterator<T>{
-
-            private Node<T> n;
-
-            public LIterator() {
-                n = head;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return n.next != null;
-            }
-
-            @Override
-            public T next() {
-                n = n.next;
-                return n.item;
-            }
+        keys.enqueue(n.key);
+        if(n.right != null){
+            midEr(n.right, keys);
         }
 
     }
 
 }
+
+
 
 

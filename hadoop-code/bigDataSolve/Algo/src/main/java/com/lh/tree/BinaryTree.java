@@ -34,9 +34,12 @@ public class BinaryTree<Key extends Comparable<Key>, Value> {
     //向树中添加元素key-value
     public void put(Key key, Value value) {
         root = put(root, key, value);
+        System.out.println("root " + root.key);
     }
 
-    //向指定的树x中添加key-value,并返回添加元素后新的树
+
+
+//    向指定的树x中添加key-value,并返回添加元素后新的树
     private Node put(Node x, Key key, Value value) {
         //如果x子树为空，
         if (x==null){
@@ -133,7 +136,7 @@ public class BinaryTree<Key extends Comparable<Key>, Value> {
                 minNode = minNode.left;
             }
 
-            //删除右子树中最小的结点
+            //删除右子树中最小的结点 // 这里少考虑了x.right.left==null这样 minNode.right = x.right; 就指向了本身，无限调用
             Node n = x.right;
             while(n.left!=null){
                 if (n.left.left==null){
@@ -295,7 +298,7 @@ public class BinaryTree<Key extends Comparable<Key>, Value> {
 
 
     //获取整个树的最大深度
-    public int maxDepth(){
+    public int  maxDepth(){
         return maxDepth(root);
     }
 

@@ -2,12 +2,13 @@ package com.lh.linear;
 
 import java.util.Iterator;
 
+
+
 public class LinkList<T> implements Iterable<T>{
     //记录头结点
     private Node head;
     //记录链表的长度
     private int N;
-
 
 
     //结点类
@@ -22,6 +23,7 @@ public class LinkList<T> implements Iterable<T>{
             this.next = next;
         }
     }
+
 
     public LinkList() {
         //初始化头结点、
@@ -146,6 +148,7 @@ public class LinkList<T> implements Iterable<T>{
         public Object next() {
             n = n.next;
             return n.item;
+
         }
     }
 

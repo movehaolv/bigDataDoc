@@ -7,7 +7,7 @@ public class PagerFoldingTest {
     public static void main(String[] args) {
 
         //模拟这只过程，产生树
-        Node<String> tree = createTree(2);
+        Node<String> tree = createTree(3);
         //遍历树，打印每个结点
         printTree(tree);
 
@@ -26,7 +26,7 @@ public class PagerFoldingTest {
             }
             //2.当前不是第一次对折
             //定义一个辅助队列，通过层序遍历的思想，找到叶子结点，叶子结点添加子节点
-            Queue<Node> queue = new Queue<>();
+            Queue<Node<String>> queue = new Queue<>();
             queue.enqueue(root);
 
             //循环遍历队列
