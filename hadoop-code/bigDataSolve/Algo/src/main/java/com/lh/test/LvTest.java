@@ -21,312 +21,187 @@ import java.util.List;
 public class LvTest{
 
     public static void main(String[] args) {
-//        BinTree<Integer, String> tree = new BinTree();
-//        //测试插入
-//        tree.put(20,"20");
-//        tree.put(10,"10");
-//        tree.put(8,"8");
-//        tree.put(6,"6");
-//        tree.put(9,"9");
-//        tree.put(16,"16");
-//        tree.put(14,"14");
-//        tree.put(17,"17");
-//        tree.put(12,"12");
-//        tree.put(25,"25");
-////        tree.put(23,"23");
-////        tree.put(26,"26");
-//
-//
-//
-//
-//        Queue<Integer> keys = tree.midEr();
-//        for (Integer key : keys) {
-//            String value = tree.get(key);
-//            System.out.println(key+"----"+value);
-////        }
+        HeapSortClass<Integer> heap = new HeapSortClass<>();
+        Integer[] a = new Integer[]{4,1,2,3,6,8,1};
 
-//    }
-
-// down down up down down up up
-        PageFold<String> stringPageFold = new PageFold<>();
-        stringPageFold.printTree(stringPageFold.createTree(3));
-
-    }
+        heap.sort(a);
+        System.out.println(Arrays.toString(a));
 
 
-
-
-}
-
-class PageFold<T>{
-
-    public void printTree(Node<T> n){
-        if(n==null){
-            return;
-        }
-        if(n.left != null){
-            printTree(n.left);
-        }
-        System.out.println(n.item);
-        if(n.left != null){
-            printTree(n.right);
-        }
-
-    }
-
-    public Node<String> createTree(int n){
-        Node<String> root = null;
-        for(int i=0;i<n;i++) {
-            if (i == 0) {
-                root = new Node<>("down", null, null);
-                continue;
-            }
-            Queue<Node<String>> queue = new Queue<>();
-            queue.enqueue(root);
-            while (!queue.isEmpty()){
-                Node<String> x = queue.dequeue();
-                if(x.left != null){
-                    queue.enqueue(x.left);
-                }
-                if(x.right != null){
-                    queue.enqueue(x.right);
-                }
-                if(x.left ==null && x.right == null){
-                    x.left = new Node<>("down", null, null);
-                    x.right = new Node<>("up", null, null);
-                }
-            }
-
-        }
-        return root;
-
-    }
-
-    static class Node<T>{
-        T item;
-        Node<T> left;
-        Node<T> right;
-
-        public Node(T item, Node<T> left, Node<T> right) {
-            this.item = item;
-            this.left = left;
-            this.right = right;
-        }
     }
 }
 
 
-class BinTree<K extends Comparable<K>, V>{
 
-    Node root;
+class HeapSortClass<T extends Comparable>{
+
+    private static  boolean less(Comparable[] heap, int i, int j) {
+        return heap[i].compareTo(heap[j])<0;
+    }
+
+    //交换heap堆中i索引和j索引处的值
+    private static  void exch(Comparable[] heap, int i, int j) {
+        Comparable tmp = heap[i];
+        heap[i] = heap[j];
+        heap[j] = tmp;
+    }
+
+    public void sort(Comparable<T>[] source){
+
+        Comparable<T>[] heap = createHeap(source);
+//        for(int i=heap.length-2;i>=1;i--){
+//            exch(heap, 1, i+1);
+//            sink(heap, 1, i);
+//        }
+        int N = heap.length - 1;
+        while (N!=1){
+            exch(heap, 1, N);
+            N--;
+            sink(heap, 1, N);
+        }
+
+        System.arraycopy(heap, 1, source, 0, source.length);
+    }
+
+    public Comparable<T>[] createHeap(Comparable<T>[] source){
+        Comparable<T>[] heap =  new Comparable[source.length+1];
+        System.arraycopy(source, 0, heap, 1, source.length);
+        for(int i=source.length/2;i>=1;i--){
+            sink(heap, i, source.length);
+        }
+        return heap;
+    }
+
+    public void sink(Comparable<T>[] heap, int target, int range){
+        while (target*2 <= range){
+            int max=0;
+            if(target*2+1 <= range){
+                if(less(heap,target*2, target*2+1)){
+                    max = target*2+1;
+                }else {
+                    max = target*2;
+                }
+            }else{
+                max = target*2;
+            }
+            if(!less(heap, target, max)){
+                break;
+            }
+            exch(heap, target, max);
+            target = max;
+
+        }
+    }
+
+}
+
+class Heap<T extends Comparable> {
+
+    T[] items;
     int N;
 
-    private class Node{
-        K key;
-        V val;
-        Node left;
-        Node right;
-
-        public Node(K key, V val, Node left, Node right) {
-            this.key = key;
-            this.val = val;
-            this.left = left;
-            this.right = right;
-        }
-    }
-
-    public BinTree() {
-        root = null;
+    public Heap(int capacity) {
+        items = (T[])new Comparable[capacity + 1];
         N = 0;
     }
 
-    public int maxDepth(){
-
-        return maxDepth(root);
+    public boolean less(int i, int j){
+        return items[i].compareTo(items[j]) < 0;
     }
 
-    public int maxDepth(Node n){
-        if(n==null){
-            return 0;
-        }
-
-        int max = 0;
-        int maxLeft = 0;
-        int maxRight = 0;
-
-        if(n.left != null){
-            maxLeft = maxDepth(n.left);
-        }
-        if(n.right != null){
-            maxRight = maxDepth(n.right);
-        }
-
-        max = maxLeft > maxRight?maxLeft+1:maxRight+1;
-
-        return max;
+    public void exch(int i, int j){
+        T temp = items[j];
+        items[j] = items[i];
+        items[i] = temp;
     }
 
-
-
-    public List<Integer> max(){
-        if(root == null){
-            return null;
-        }
-        List<Integer> list = new ArrayList<>();
-        max(root, 1, list);
-        return list;
+    public void insert(T t){
+        items[++N] = t; // 从1开始
+        swim(N);
     }
 
-    public void max(Node n,int sum, List<Integer> list){
-        if(n.left == null && n.right == null){
-            list.add(sum);
-            return;
-        }
-        if(n.left != null){
-            max(n.left, sum+1, list);
-        }
-        if(n.right != null){
-            max(n.right, sum+1, list);
-        }
-
-    }
-
-    public Queue<V> ciEnr(){
-        Queue<Node> keys = new Queue<>();
-        Queue<V> values = new Queue<>();
-        if(root == null){
-            return null;
-        }
-        keys.enqueue(root);
-        ciEnr(keys, values);
-        return values;
-    }
-
-    public void ciEnr(Queue<Node> keys, Queue<V> values){
-        if(keys.isEmpty()){
-            return;
-        }
-        Node n = keys.dequeue();
-        values.enqueue(n.val);
-        if(n.left != null){
-            keys.enqueue(n.left);
-        }
-        if(n.right != null){
-            keys.enqueue(n.right);
-        }
-        ciEnr(keys, values);
-    }
-
-    public int size(){
-        return N;
-    }
-
-    public void put(K key, V val){
-        root = put(root, key, val);
-    }
-
-    public Node put(Node n,K key, V val){
-        if(n == null){
-            N++;
-            return new Node(key, val, null, null);
-        }
-
-        int comp = n.key.compareTo(key);
-        if(comp < 0){
-            n.right = put(n.right, key, val);
-        }else if(comp > 0) {
-            n.left = put(n.left, key, val);
-        }else{
-            n.val = val;
-        }
-
-        return n;
-    }
-
-    public V get(K key){
-         return get(root, key);
-    }
-    public V get(Node n, K key){
-        if(n == null){
-            return null;
-        }
-        int com = key.compareTo(n.key);
-        if(com < 0){
-            return get(n.left, key);
-        }else if(com > 0){
-            return get(n.right, key);
-        }else {
-            return n.val;
-        }
-    }
-
-    public void delete(K key){
-        root = delete(root, key);
-    }
-
-    public Node delete(Node x, K key){
-        if(x == null){
-            return x;
-        }
-        int com = x.key.compareTo(key);
-        if(com > 0){
-            x.left = delete(x.left, key);
-        }else if(com < 0){
-            x.right = delete(x.right, key);
-        }else {
-            N--;
-
-            if(x.left == null){
-                return x.right;
+    public void swim(int k){
+        while (k > 1){
+            if(less(k/2, k)){
+                exch(k/2, k);
+                k = k/2;
+            }else{
+                break;
             }
-            if(x.right == null){
-                return x.left;
-            }
+        }
+    }
 
-            Node n = x.right;
-            Node minNode = null;
-            while (n.left !=null){
-                if(n.left.left == null){
-                    minNode = n.left;
-                    n.left = null;
+    public T delMax(){
+        if(N==0){
+            return null;
+        }
+        T maxItem = items[1];
+        exch(1, N);
+        items[N] = null;
+        N--;
+        sink(1);
+        return maxItem;
+    }
 
+    public void sink1(int k){
+        while (2*k <= N){
+            if(2*k+1 <= N){
+                if(less(2*k, 2*k+1)){
+                    if(less(k, 2*k+1)){
+                        exch(k, 2*k+1);
+                        k = 2*k+1;
+                    }else{
+                        break;
+                    }
                 }else{
-                    n = n.left;
+                    if(less(k, 2*k)){
+                        exch(k, 2*k);
+                        k = 2*k;
+                    }else{
+                        break;
+                    }
                 }
+            }else{
+                if(less(k, 2*k)){
+                    exch(k, 2*k);
+                }
+                k = 2*k;
             }
 
-            minNode.left = x.left;
-            minNode.right = x.right;
-
-            return minNode;
-
-        }
-        return x;
-
+          }
     }
 
-    public Queue<K> midEr(){
-        Queue<K> keys = new Queue<>();
-        midEr(root, keys);
-        return keys;
+
+    public void sink(int k){
+        while (2*k <= N){
+            int max = 0;
+            if(2*k+1 <= N){
+                if(less(2*k, 2*k+1)){
+                    max = 2*k+1;
+                }else{
+                    max = 2*k;
+                }
+            }else{
+                max = 2*k;
+            }
+            if(!less(k, max)){
+                break;
+            }
+            exch(k, max);
+            k = max;
+
+        }
     }
 
-    public void midEr(Node n, Queue<K> keys){
-//        if(n == null){
-//            System.out.println("aaaaa");
-//            return;
-//        }
-        if(n.left != null){
-            midEr(n.left, keys);
-        }
-        keys.enqueue(n.key);
-        if(n.right != null){
-            midEr(n.right, keys);
-        }
 
-    }
 
 }
+
+
+
+
+
+
 
 
 
