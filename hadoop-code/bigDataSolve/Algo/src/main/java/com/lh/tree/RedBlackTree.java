@@ -104,7 +104,7 @@ public class RedBlackTree<Key extends Comparable<Key>, Value> {
         //当前结点变为红色
         h.color = RED;
         //左子结点和右子结点变为黑色
-        h.left.color=BLACK;
+        h.left.color = BLACK;
         h.right.color = BLACK;
     }
 
@@ -117,7 +117,7 @@ public class RedBlackTree<Key extends Comparable<Key>, Value> {
     public void put(Key key, Value val) {
         root = put(root,key,val);
         //根结点的颜色总是黑色
-        root.color = RED;
+        root.color = BLACK;
     }
 
     /**
@@ -157,7 +157,7 @@ public class RedBlackTree<Key extends Comparable<Key>, Value> {
 
         //进行右旋：当当前结点h的左子结点和左子结点的左子结点都为红色，需要右旋
         if (isRed(h.left) && isRed(h.left.left)){
-            rotateRight(h);
+            h = rotateRight(h);
         }
 
         //颜色反转：当前结点的左子结点和右子结点都为红色时，需要颜色反转

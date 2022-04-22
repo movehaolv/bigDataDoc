@@ -21,5 +21,8 @@ public class HeapTest {
         while((result = heap.delMax())!=null){
             System.out.print(result+" ");
         }
+
+
+
     }
 }

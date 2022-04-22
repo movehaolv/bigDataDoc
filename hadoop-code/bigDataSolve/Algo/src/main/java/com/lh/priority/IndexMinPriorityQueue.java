@@ -118,16 +118,20 @@ public class IndexMinPriorityQueue<T extends Comparable<T>> {
         //交换pq中索引k处的值和索引N处的值
         exch(k,N);
         //删除qp中的内容
-        qp[pq[N]] = -1;
+        qp[pq[N]] = -1; // 这个可以写为qp[i]=-1
         //删除pq中的内容
         pq[N]=-1;
         //删除items中的内容
-        items[k]=null;
+//        items[k]=null; 这源码错的
+        items[i] = null;
         //元素的数量-1
         N--;
         //堆的调整
-        sink(k);
-        swim(k);
+        if(k!=N+1){ // 最后一个元素上浮下沉，否则下沉报错
+            sink(k);
+            swim(k);
+        }
+
     }
 
     //把与索引i关联的元素修改为为t

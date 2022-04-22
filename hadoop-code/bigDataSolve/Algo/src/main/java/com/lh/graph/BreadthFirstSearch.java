@@ -19,30 +19,51 @@ public class BreadthFirstSearch {
         bfs(G,s);
     }
 
-    //使用广度优先搜索找出G图中v顶点的所有相邻顶点
+    //使用广度优先搜索找出G图中v顶点的所有相邻顶点  // 这源码写的还是深度优先
+//    private void bfs(Graph G, int v) {
+//        //把当前顶点v标识为已搜索
+//        marked[v] = true;
+//        //让顶点v进入队列，待搜索
+//        waitSearch.enqueue(v);
+//        //通过循环，如果队列不为空，则从队列中弹出一个待搜索的顶点进行搜索
+//        while(!waitSearch.isEmpty()){
+//            //弹出一个待搜索的顶点
+//            Integer wait = waitSearch.dequeue();
+//
+//            //遍历wait顶点的邻接表
+//            for (Integer w : G.adj(wait)) {
+//
+//                if (!marked[w]){
+//                    bfs(G,w);
+//                }
+//            }
+//        }
+//
+//        //让相通的顶点+1；
+//        count++;
+//
+//    }
+
     private void bfs(Graph G, int v) {
-        //把当前顶点v标识为已搜索
+
         marked[v] = true;
-        //让顶点v进入队列，待搜索
         waitSearch.enqueue(v);
-        //通过循环，如果队列不为空，则从队列中弹出一个待搜索的顶点进行搜索
-        while(!waitSearch.isEmpty()){
-            //弹出一个待搜索的顶点
+        count++;
+        while (!waitSearch.isEmpty()){
             Integer wait = waitSearch.dequeue();
-
-            //遍历wait顶点的邻接表
-            for (Integer w : G.adj(wait)) {
-
-                if (!marked[w]){
-                    bfs(G,w);
+            for(Integer w:G.adj(wait)){
+                if(!marked[w]){
+                    marked[w] = true;
+                    waitSearch.enqueue(w);
+                    count++;
                 }
             }
         }
 
-        //让相通的顶点+1；
-        count++;
 
     }
+
+
 
     //判断w顶点与s顶点是否相通
     public boolean marked(int w) {

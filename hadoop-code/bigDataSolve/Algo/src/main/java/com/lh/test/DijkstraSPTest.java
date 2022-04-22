@@ -12,7 +12,9 @@ public class DijkstraSPTest {
 
     public static void main(String[] args) throws Exception{
         //创建一副加权有向图
-        BufferedReader br = new BufferedReader(new InputStreamReader(DijkstraSPTest.class.getClassLoader().getResourceAsStream("min_route_test.txt")));
+        BufferedReader br =
+                new BufferedReader(new InputStreamReader(DijkstraSPTest.class.getClassLoader().getResourceAsStream(
+                        "min_route_test.txt")));
         int total = Integer.parseInt(br.readLine());
         EdgeWeightedDigraph G = new EdgeWeightedDigraph(total);
 
@@ -33,7 +35,7 @@ public class DijkstraSPTest {
         DijkstraSP dijkstraSP = new DijkstraSP(G, 0);
 
         //查找最短路径,0->6的最短路径
-        Queue<DirectedEdge> edges = dijkstraSP.pathTo(6);
+        Queue<DirectedEdge> edges = dijkstraSP.pathTo(5);
 
 
         //遍历打印

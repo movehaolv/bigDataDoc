@@ -39,7 +39,41 @@ public class BinaryTree<Key extends Comparable<Key>, Value> {
 
 
 
-//    向指定的树x中添加key-value,并返回添加元素后新的树
+    public Node put1(Node x, Key key, Value value){
+
+        // 不用递归
+        if(x==null){
+            N++;
+            return new Node(key,value, null,null);
+        }
+        while (true){
+            if(key.compareTo(x.key) < 0){
+                if(x.left!=null){
+                    x = x.left;
+                }else {
+                    x.left = new Node(key, value, null, null);
+                    N++;
+                    break;
+                }
+            }else if(key.compareTo(x.key) > 0){
+                if(x.right!=null){
+                    x = x.right;
+                }else {
+                    x.right = new Node(key,value,null,null);
+                    N++;
+                    break;
+                }
+            }else {
+                x.key = key;
+                break;
+            }
+        }
+        return root;
+    }
+
+
+
+    //    向指定的树x中添加key-value,并返回添加元素后新的树
     private Node put(Node x, Key key, Value value) {
         //如果x子树为空，
         if (x==null){

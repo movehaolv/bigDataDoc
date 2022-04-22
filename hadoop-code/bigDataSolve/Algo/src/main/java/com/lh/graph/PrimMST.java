@@ -48,7 +48,7 @@ public class PrimMST {
         //把顶点v添加到最小生成树中
         marked[v] = true;
         //更新数据
-        for (Edge e : G.adj(v)) {
+          for (Edge e : G.adj(v)) {
             //获取e边的另外一个顶点(当前顶点是v)
             int w = e.other(v);
             //判断另外一个顶点是不是已经在树中，如果在树中，则不做任何处理，如果不再树中，更新数据

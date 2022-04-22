@@ -19,6 +19,7 @@ public class DirectedCycle {
 
         //找到图中每一个顶点，让每一个顶点作为入口，调用一次dfs进行搜索
         for (int v =0; v<G.V();v++){
+            if(hasCycle)  break; // 添加判断，如果发现环就不再遍历
             //判断如果当前顶点还没有搜索过，则调用dfs进行搜索
             if (!marked[v]){
                 dfs(G,v);

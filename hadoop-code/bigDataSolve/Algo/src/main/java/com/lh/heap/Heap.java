@@ -4,7 +4,7 @@ public class Heap<T extends Comparable<T>> {
     //存储堆中的元素
     private T[] items;
     //记录堆中元素的个数
-    private int N;
+    public int N;
 
     public Heap(int capacity) {
         this.items= (T[]) new Comparable[capacity+1];
@@ -42,6 +42,14 @@ public class Heap<T extends Comparable<T>> {
             k = k/2;
         }
 
+        /*  应该加个break更好
+           if(less(k/2, k)){
+                exch(k/2, k);
+                k = k/2;
+            }else {
+                break;
+            }
+         */
     }
 
     //删除堆中最大的元素,并返回这个最大元素
@@ -65,7 +73,7 @@ public class Heap<T extends Comparable<T>> {
         while(2*k<=N){
             //获取当前结点的子结点中的较大结点
             int max;//记录较大结点所在的索引
-            if (2*k+1<=N){
+            if (2*k+1<=N){ // 如果右子节点存在
                 if (less(2*k,2*k+1)){
                     max=2*k+1;
                 }else{
