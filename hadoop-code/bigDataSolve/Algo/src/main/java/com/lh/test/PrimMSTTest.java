@@ -32,12 +32,10 @@ public class PrimMSTTest {
             //构建加权无向边
             Edge edge = new Edge(v, w, weight);
             G.addEdge(edge);
-
         }
 
         //创建一个PrimMST对象，计算加权无向图中的最小生成树
         PrimMST primMST = new PrimMST(G);
-
 
         //获取最小生成树中的所有边
         Queue<Edge> edges = primMST.edges();

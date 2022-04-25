@@ -9,17 +9,15 @@ public class DepthFirstSearchTest {
 
         //准备Graph对象
         Graph G = new Graph(13);
-        G.addEdge(0,5);
-        G.addEdge(0,1);
-        G.addEdge(0,2);
         G.addEdge(0,6);
+        G.addEdge(0,2);
+        G.addEdge(0,1);
+        G.addEdge(0,5);
         G.addEdge(5,3);
         G.addEdge(5,4);
         G.addEdge(3,4);
         G.addEdge(4,6);
-
         G.addEdge(7,8);
-
         G.addEdge(9,11);
         G.addEdge(9,10);
         G.addEdge(9,12);
@@ -42,6 +40,10 @@ public class DepthFirstSearchTest {
 
         boolean marked2 = search.marked(7);
         System.out.println("顶点7和顶点0是否相通："+marked2);
+
+
+        // 获取深度优先路径 -- 添加功能
+        search.dfsPath().forEach(ele -> System.out.print(ele + "  "));
 
     }
 }

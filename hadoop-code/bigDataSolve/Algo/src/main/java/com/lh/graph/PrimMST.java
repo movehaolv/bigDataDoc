@@ -3,9 +3,6 @@ package com.lh.graph;
 import com.lh.linear.Queue;
 import com.lh.priority.IndexMinPriorityQueue;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 public class PrimMST {
     //索引代表顶点，值表示当前顶点和最小生成树之间的最短边
     private Edge[] edgeTo;
@@ -55,8 +52,6 @@ public class PrimMST {
             if (marked[w]){
                 continue;
             }
-
-
             //判断边e的权重是否小于从w顶点到树中已经存在的最小边的权重；
             if (e.weight()<distTo[w]){
                 //更新数据
@@ -69,12 +64,8 @@ public class PrimMST {
                 }else{
                     pq.insert(w,e.weight());
                 }
-
             }
-
-
         }
-
     }
 
     //获取最小生成树的所有边

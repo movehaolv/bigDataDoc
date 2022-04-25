@@ -35,7 +35,7 @@ public class DijkstraSPTest {
         DijkstraSP dijkstraSP = new DijkstraSP(G, 0);
 
         //查找最短路径,0->6的最短路径
-        Queue<DirectedEdge> edges = dijkstraSP.pathTo(5);
+        Queue<DirectedEdge> edges = dijkstraSP.pathTo(3);
 
 
         //遍历打印
