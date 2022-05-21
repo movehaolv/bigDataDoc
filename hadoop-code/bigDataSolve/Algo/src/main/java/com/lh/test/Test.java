@@ -1,6 +1,9 @@
 package com.lh.test;
 
-import com.lh.linear.Queue;
+
+import com.lh.linear.Stack;
+
+import java.util.ArrayList;
 
 /**
  * @Author: lvhao-004
@@ -11,7 +14,12 @@ import com.lh.linear.Queue;
 
 public class Test {
     public static void main(String[] args) {
-        fun(1);
+
+        Stack<Integer> stack = new Stack<>();
+        stack.push(1);
+        stack.push(2);
+        stack.push(3);
+        System.out.println(stack.pop());
 
     }
 

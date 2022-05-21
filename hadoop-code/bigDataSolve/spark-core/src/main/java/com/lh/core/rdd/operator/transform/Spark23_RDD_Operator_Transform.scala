@@ -3,6 +3,8 @@ package com.lh.core.rdd.operator.transform
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.collection.immutable
+
 object Spark23_RDD_Operator_Transform {
 
     def main(args: Array[String]): Unit = {
@@ -13,7 +15,7 @@ object Spark23_RDD_Operator_Transform {
         // TODO 算子 - (Key - Value类型)
 
         val rdd1 = sc.makeRDD(List(
-            ("a", 1), ("b", 2), ("c", 3)
+            ("a", 1), ("b", 2), ("a", 3)
         ))
 
         val rdd2 = sc.makeRDD(List(
@@ -25,6 +27,16 @@ object Spark23_RDD_Operator_Transform {
 
         cgRDD.collect().foreach(println)
         rdd1.join(rdd2).collect().foreach(println)
+/*
+    (a,(1,1))
+    (a,(3,1))
+ */
+
+        val rdd = sc.makeRDD(List("hello","hello", "world")).map((_,1));
+        rdd.flatMap{case(x, y)=>{
+            Array(Array(x))
+        }}.collect().foreach(println); // [Ljava.lang.String;@47b179d7
+        println(Array("a"))  // [Ljava.lang.String;@47b179d7
 
         sc.stop()
 

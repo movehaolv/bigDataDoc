@@ -80,5 +80,25 @@ public class Quick {
        return right;
     }
 
+
+    public int partition2(Comparable[] a, int lo, int hi){
+        int left=lo;
+        int right=hi;
+        while (left < right) {
+            while (left < hi && less(lo, left)  ){  // 注意点：  left可以等于lo
+                left++;
+            }
+
+            while (right>lo &&!less(right, lo)  ){   // 注意点：  right必须小于lo
+                right--;
+            }
+            if(left<right){
+                exch(a, left, right);
+            }
+        }
+        exch(a, lo, right);
+        return right;
+    }
+
 }
 

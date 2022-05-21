@@ -43,7 +43,7 @@ public class Merge {
         }
 
         //对lo到hi之间的数据进行分为两个组
-        int mid = lo+(hi-lo)/2;//   5,9  mid=7
+        int mid = lo+(hi-lo)/2;//   5,9  mid=7    -----------------------  注意 +lo
 
         //分别对每一组数据进行排序
         sort(a,lo,mid);
@@ -87,5 +87,7 @@ public class Merge {
 
     }
 
-}
+
+
+    }
 

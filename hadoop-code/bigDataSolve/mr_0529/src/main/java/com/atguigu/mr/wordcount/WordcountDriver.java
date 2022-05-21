@@ -20,7 +20,7 @@ public class WordcountDriver {
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 
 		args = new String[] { "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com" +
-				"\\atguigu\\mr\\wordcount\\inputword", "output5" };
+				"\\atguigu\\mr\\wordcount\\input", "output5" };
 //		args = new String[] { "C:\\Users\\lvhao-004\\Desktop\\a.txt.gz"
 //				, "output55" };
 
@@ -47,10 +47,10 @@ public class WordcountDriver {
 		// 5 设置最终数据输出的key和value类型
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
-		job.setNumReduceTasks(1);
+		job.setNumReduceTasks(2);
 
 //		 如果不设置InputFormat，它默认用的是TextInputFormat.class
-		 job.setInputFormatClass(CombineTextInputFormat.class);
+//		 job.setInputFormatClass(CombineTextInputFormat.class);
 //		 虚拟存储切片最大值设置4m
 //		 CombineTextInputFormat.setMaxInputSplitSize(job, 4194304);
 
