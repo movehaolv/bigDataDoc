@@ -125,6 +125,12 @@
 &emsp; 2）Container由ApplicationMaster向ResourceManager申请的，由ResouceManager中的资源调度器异步分配给ApplicationMaster  
 &emsp; 3）Container的运行是由ApplicationMaster向资源所在的NodeManager发起的，Container运行时需提供内部执行的任务命令  
 
+```
+总结：yarn的container和spark的executor基本上是等价的，一个container对应一个JVM进程（也就是一个executor） lh
+```
+
+
+
 ## 16、Spark使用parquet文件存储格式能带来哪些好处？（☆☆☆☆☆）  
 &emsp; 1）如果说HDFS是大数据时代分布式文件系统首选标准，那么parquet则是整个大数据时代文件存储格式实时首选标准。  
 &emsp; 2）速度更快：从使用spark sql操作普通文件CSV和parquet文件速度对比上看，绝大多数情况会比使用csv等普通文件速度提升10倍左右，在一些普通文件系统无法在spark上成功运行的情况下，使用parquet很多时候可以成功运行。  
@@ -148,7 +154,7 @@
 &emsp; 不一定，当数据规模小，Hash shuffle快于Sorted Shuffle数据规模大的时候；当数据量大，sorted Shuffle会比Hash shuffle快很多，因为数量大的有很多小文件，不均匀，甚至出现数据倾斜，消耗内存大，1.x之前spark使用hash，适合处理中小规模，1.x之后，增加了Sorted shuffle，Spark更能胜任大规模处理了。  
 
 ### 20、Sort-based shuffle的缺陷? （☆☆☆☆☆）  
-&emsp; 1）如果mapper中task的数量过大，依旧会产生很多小文件，此时在shuffle传递数据的过程中reducer段，reduce会需要同时大量的记录进行反序列化，导致大量的内存消耗和GC的巨大负担，造成系统缓慢甚至崩溃。   
+&emsp; 1）如果mapper中task的数量过大，依旧会产生很多小文件【task会过程中会多次溢出生成临时小文件，最后跟优化过的hashshuf一样，最后一个core合并生成一个小文件】，此时在shuffle传递数据的过程中reducer段，reduce会需要同时大量的记录进行反序列化，导致大量的内存消耗和GC的巨大负担，造成系统缓慢甚至崩溃。   
 &emsp; 2）如果需要在分片内也进行排序，此时需要进行mapper段和reducer段的两次排序。  
 
 ### 21、spark.storage.memoryFraction参数的含义,实际生产中如何调优？（☆☆☆☆☆）  

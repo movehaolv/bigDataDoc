@@ -17,18 +17,18 @@
 ### 3、Kafka 的设计架构？  
 简单架构如下：  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Kafka%E9%9D%A2%E8%AF%95%E9%A2%98Pics/Kafka%E7%AE%80%E5%8D%95%E6%9E%B6%E6%9E%84.jpg"/>  
+<img src="../pics/Kafka面试题Pics/Kafka简单架构.jpg"/>  
 <p align="center">
 </p>
 </p>  
+
 
 详细架构如下：  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Kafka%E9%9D%A2%E8%AF%95%E9%A2%98Pics/Kafka%E8%AF%A6%E7%BB%86%E6%9E%B6%E6%9E%84.jpg"/>  
+<img src="../pics/Kafka面试题Pics/Kafka详细架构.jpg"/>  
 <p align="center">
 </p>
 </p>  
-
 Kafka 架构分为以下几个部分：  
 &emsp; Producer：消息生产者，就是向 kafka broker 发消息的客户端。  
 &emsp; Consumer：消息消费者，向 kafka broker 取消息的客户端。  
@@ -44,6 +44,12 @@ Kafka 架构分为以下几个部分：
 ### 5、Kafka 是如何做到消息的有序性？  
 &emsp; kafka 中的每个 partition 中的消息在写入时都是有序的，而且单独一个 partition 只能由一个消费者去消费，可以在里面保证消息的顺序性。但是分区之间的消息是不保证有序的。  
 
+【网友提供】
+
+发送时：用kafka采集用户访问 轨迹，重写分区器把用户id作为分区键，这样每个用户访问的埋点记录就能按顺序到一个分区，然后有序消费
+
+消费时：我们可以借助于Set或者Redis，将多次收到的相同订单号的消息储存起来，等满足4条(创建-提交-付款-发货)后再一并处理。我自己在我的项目中就是这么做的
+
 ### 6、Kafka 的高可靠性是怎么实现的？  
 **可回答：  
 &emsp; Kafka 在什么情况下会出现消息丢失？**  
@@ -56,21 +62,21 @@ Kafka 架构分为以下几个部分：
 &emsp; **Producer 往 Broker 发送消息**  
 &emsp; 如果我们要往 Kafka 对应的主题发送消息，我们需要通过 Producer 完成。前面我们讲过 Kafka 主题对应了多个分区，每个分区下面又对应了多个副本；为了让用户设置数据可靠性， Kafka 在 Producer 里面提供了消息确认机制。也就是说我们可以通过配置来决定消息发送到对应分区的几个副本才算消息发送成功。可以在定义 Producer 时通过 acks 参数指定（在 0.8.2.X 版本之前是通过 request.required.acks 参数设置的）。  
 &emsp; 这个参数支持以下三种值：  
-&emsp; acks = 0：意味着如果生产者能够通过网络把消息发送出去，那么就认为消息已成功写入Kafka。在这种情况下还是有可能发生错误，比如发送的对象无能被序列化或者网卡发生故障，但如果是分区离线或整个集群长时间不可用，那就不会收到任何错误。在 acks=0 模式下的运行速度是非常快的（这就是为什么很多基准测试都是基于这个模式），你可以得到惊人的吞吐量和带宽利用率，不过如果选择了这种模式， 一定会丢失一些消息。  
-&emsp; acks = 1：意味若 Leader 在收到消息并把它写入到分区数据文件（不一定同步到磁盘上）时会返回确认或错误响应。在这个模式下，如果发生正常的 Leader 选举，生产者会在选举时收到一个 LeaderNotAvailableException 异常，如果生产者能恰当地处理这个错误，它会重试发送悄息，最终消息会安全到达新的 Leader 那里。不过在这个模式下仍然有可能丢失数据，比如消息已经成功写入 Leader，但在消息被复制到 follower 副本之前 Leader发生崩溃。  
-&emsp; acks = all（这个和 request.required.acks = -1 含义一样）：意味着 Leader 在返回确认或错误响应之前，会等待所有同步副本都收到悄息。如果和 min.insync.replicas 参数结合起来，就可以决定在返回确认前至少有多少个副本能够收到悄息，生产者会一直重试直到消息被成功提交。不过这也是最慢的做法，因为生产者在继续发送其他消息之前需要等待所有副本都收到当前的消息。  
+&emsp; acks = 0：producer 不等待 broker 的 ack，这一操作提供了一个最低的延迟， broker 一接收到还没有写入磁盘就已经返回，当 broker 故障时有可能丢失数据；    
+&emsp; acks = 1：producer 等待 broker 的 ack， partition 的 leader 落盘成功后返回 ack，如果在 follower同步成功之前 leader 故障，那么将会丢失数据；  
+&emsp; acks = all：producer 等待 broker 的 ack， partition 的 leader 和 follower 全部落盘成功后才返回 ack。但是如果在 follower 同步完成后， broker 发送 ack 之前， leader 发生故障，那么会造成数据重复  。  
 &emsp; 根据实际的应用场景，我们设置不同的 acks，以此保证数据的可靠性。  
 &emsp; 另外，Producer 发送消息还可以选择同步（默认，通过 producer.type=sync 配置） 或者异步（producer.type=async）模式。如果设置成异步，虽然会极大的提高消息发送的性能，但是这样会增加丢失数据的风险。如果需要确保消息的可靠性，必须将 producer.type 设置为 sync。  
 &emsp; **Leader 选举**  
 &emsp; 在介绍 Leader 选举之前，让我们先来了解一下 ISR（in-sync replicas）列表。每个分区的 leader 会维护一个 ISR 列表，ISR 列表里面就是 follower 副本的 Borker 编号，只有跟得上 Leader 的 follower 副本才能加入到 ISR 里面，这个是通过 replica.lag.time.max.ms 参数配置的。只有 ISR 里的成员才有被选为 leader 的可能。  
 2）**数据一致性（可回答 Kafka数据一致性原理？）**  
 &emsp; 这里介绍的数据一致性主要是说不论是老的 Leader 还是新选举的 Leader，Consumer 都能读到一样的数据。那么 Kafka 是如何实现的呢？  
+
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Kafka%E9%9D%A2%E8%AF%95%E9%A2%98Pics/%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7.jpg"/>  
+<img src="../pics/Kafka面试题Pics/数据一致性.jpg"/>  
 <p align="center">
 </p>
 </p>  
-
 &emsp; 假设分区的副本为3，其中副本0是 Leader，副本1和副本2是 follower，并且在 ISR 列表里面。虽然副本0已经写入了 Message4，但是 Consumer 只能读取到 Message2。因为所有的 ISR 都同步了 Message2，只有 High Water Mark 以上的消息才支持 Consumer 读取，而 High Water Mark 取决于 ISR 列表里面偏移量最小的分区，对应于上图的副本2，这个很类似于木桶原理。  
 &emsp; 这样做的原因是还没有被足够多副本复制的消息被认为是“不安全”的，如果 Leader 发生崩溃，另一个副本成为新 Leader，那么这些消息很可能丢失了。如果我们允许消费者读取这些消息，可能就会破坏一致性。试想，一个消费者从当前 Leader（副本0） 读取并处理了 Message4，这个时候 Leader 挂掉了，选举了副本1为新的 Leader，这时候另一个消费者再去从新的 Leader 读取消息，发现这个消息其实并不存在，这就导致了数据不一致性问题。  
 &emsp; 当然，引入了 High Water Mark 机制，会导致 Broker 间的消息复制因为某些原因变慢，那么消息到达消费者的时间也会随之变长（因为我们会先等待消息复制完毕）。延迟时间可以通过参数 replica.lag.time.max.ms 参数配置，它指定了副本在复制消息时可被允许的最大延迟时间。  
@@ -107,6 +113,10 @@ Kafka 架构分为以下几个部分：
 &emsp; 3）通过index元数据全部映射到memory，可以避免segment file的IO磁盘操作。  
 &emsp; 4）通过索引文件稀疏存储，可以大幅降低index文件元数据占用空间大小。  
 
+![image-20220527150516759](..\pics\Kafka面试题Pics\文件存储1.png)
+
+![image-20220527150735971](D:\workLv\learn\proj\hadoop-doc\面试系列\pics\Kafka面试题Pics\文件存储2.png)
+
 ### 13、Kafka创建Topic时如何将分区放置到不同的Broker中？  
 &emsp; 1）副本因子不能大于 Broker 的个数；  
 &emsp; 2）第一个分区（编号为0）的第一个副本放置位置是随机从 brokerList 选择的；  
@@ -126,7 +136,7 @@ Kafka 架构分为以下几个部分：
 
 ### 16、Kafka分区分配策略  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Kafka%E9%9D%A2%E8%AF%95%E9%A2%98Pics/Kafka%E5%88%86%E5%8C%BA%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5.png"/>  
+<img src="../pics/Kafka面试题Pics/Kafka分区分配策略.png"/>  
 <p align="center">
 </p>
 </p>  
@@ -156,6 +166,7 @@ Kafka 架构分为以下几个部分：
 &emsp; 同一个Consumer Group里面的所有消费者的num.streams必须相等；  
 &emsp; 每个消费者订阅的主题必须相同。  
 &emsp; 所以这里假设前面提到的2个消费者的num.streams = 2。RoundRobin策略的工作原理：将所有主题的分区组成 TopicAndPartition 列表，然后对 TopicAndPartition 列表按照 hashCode 进行排序，这里文字可能说不清，看下面的代码应该会明白：  
+
 ```scala
 val allTopicPartitions = ctx.partitionsForTopic.flatMap { case(topic, partitions) =>
   info("Consumer %s rebalancing the following partitions for topic %s: %s"
@@ -170,7 +181,7 @@ val allTopicPartitions = ctx.partitionsForTopic.flatMap { case(topic, partitions
    */
   topicPartition1.toString.hashCode < topicPartition2.toString.hashCode
 })
-```  
+```
 &emsp; 最后按照round-robin风格将分区分别分配给不同的消费者线程。  
 &emsp; 在我们的例子里面，假如按照 hashCode 排序完的topic-partitions组依次为T1-5, T1-3, T1-0, T1-8, T1-2, T1-1, T1-4, T1-7, T1-6, T1-9，我们的消费者线程排序为C1-0, C1-1, C2-0, C2-1，最后分区分配的结果为：  
 &emsp; C1-0 将消费 T1-5, T1-2, T1-6 分区；  
@@ -182,10 +193,12 @@ val allTopicPartitions = ctx.partitionsForTopic.flatMap { case(topic, partitions
 ### 17、Kafka 是如何实现高吞吐率的？  
 &emsp; Kafka是分布式消息系统，需要处理海量的消息，Kafka的设计是把所有的消息都写入速度低容量大的硬盘，以此来换取更强的存储能力，但实际上，使用硬盘并没有带来过多的性能损失。kafka主要使用了以下几个方式实现了超高的吞吐率：  
 &emsp; 1）顺序读写  
-&emsp; 2）零拷贝  
+&emsp; 2）零拷贝: 数据直接在内核完成输入和输出，不需要拷贝到用户空间再写出去。kafka数据写入磁盘前，数据先写到进程的内存空间  
 &emsp; 3）文件分段  
 &emsp; 4）批量发送  
-&emsp; 5）数据压缩  
+&emsp; 5）数据压缩 
+
+​	 6) 分区 
 
 ### 18、Kafka 缺点？  
 &emsp; 1）由于是批量发送，数据并非真正的实时；  
@@ -212,3 +225,4 @@ val allTopicPartitions = ctx.partitionsForTopic.flatMap { case(topic, partitions
 
 
 
+ 

@@ -21,8 +21,7 @@ spark官网建议task个数为CPU的核数*executor的个数的2~3倍。
 ### 4、spark.shuffle.memoryFraction参数的含义，以及优化经验？  
 &emsp; 1）spark.shuffle.memoryFraction是shuffle调优中 重要参数，shuffle从上一个task拉去数据过来，要在Executor进行聚合操作，
 聚合操作时使用Executor内存的比例由该参数决定，默认是20%如果聚合时数据超过了该大小，那么就会spill到磁盘，极大降低性能；  
-&emsp; 2）如果Spark作业中的RDD持久化操作较少，shuffle操作较多时，建议降低持久化操作的内存占比，提高shuffle操作的内存占比比例，
-避免shuffle过程中数据过多时内存不够用，必须溢写到磁盘上，降低了性能。此外，如果发现作业由于频繁的gc导致运行缓慢，意味着task执行用户代码的内存不够用，那么同样建议调低这个参数的值(memoryFraction是用来shuffle read的内存)。  
+&emsp; 2）如果Spark作业中的RDD持久化操作较少，shuffle操作较多时，建议降低持久化操作的内存占比，提高shuffle操作的内存占比比例，避免shuffle过程中数据过多时内存不够用，必须溢写到磁盘上，降低了性能。此外，如果发现作业由于频繁的gc导致运行缓慢，意味着task执行用户代码的内存不够用，那么同样建议调低这个参数的值(这个参数是指spark.storage.memoryFraction)。  
 
 ### 5、Spark中standalone模式特点，有哪些优点和缺点？  
 1）特点：  

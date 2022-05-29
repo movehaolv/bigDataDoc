@@ -17,10 +17,11 @@
 &emsp; 在Kafka集群中，broker指Kafka服务器。  
 &emsp; 术语解析：  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Kafka%E9%9D%A2%E8%AF%95%E9%A2%98Pics/Kafka%E4%B8%ADbroker%E7%9A%84%E6%84%8F%E4%B9%89.png"/>  
+<img src="../pics/Kafka面试题Pics/Kafka中broker的意义.png"/>  
 <p align="center">
 </p>
 </p>  
+
 
 ### 5、Kafka服务器能接收到的最大信息是多少？  
 &emsp; Kafka服务器可以接收到的消息的最大大小是1000000字节。  
@@ -41,6 +42,8 @@
 &emsp; 这里有两种方法，可以在数据生成时准确地获得一个语义:   
 &emsp; 每个分区使用一个单独的写入器，每当你发现一个网络错误，检查该分区中的最后一条消息，以查看您的最后一次写入是否成功。  
 &emsp; 在消息中包含一个主键(UUID或其他)，并在用户中进行反复制。  
+
+![image-20220527155450464](..\pics\Kafka面试题Pics\exactlyOnce.png)
 
 ### 10、解释如何减少ISR中的扰动？broker什么时候离开ISR？（☆☆☆☆☆）  
 &emsp; ISR是一组与leaders完全同步的消息副本，也就是说ISR中包含了所有提交的消息。ISR应该总是包含所有的副本，直到出现真正的故障。如果一个副本从leader中脱离出来，将会从ISR中删除。  
