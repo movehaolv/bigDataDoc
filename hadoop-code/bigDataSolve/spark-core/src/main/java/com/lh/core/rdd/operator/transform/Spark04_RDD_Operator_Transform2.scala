@@ -23,8 +23,13 @@ object Spark04_RDD_Operator_Transform2 {
         )
 
         flatRDD.collect().foreach(println)
-
-
+                /*
+                1
+                2
+                3
+                4
+                5
+                 */
 
         sc.stop()
 

@@ -8,7 +8,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 object Spark05_RDD_Operator_Transform {
 
     def main(args: Array[String]): Unit = {
-
+        // 将同一个分区的数据直接转换为相同类型的内存数组进行处理，分区不变
         val sparkConf = new SparkConf().setMaster("local[*]").setAppName("Operator")
         val sc = new SparkContext(sparkConf)
 
@@ -21,9 +21,12 @@ object Spark05_RDD_Operator_Transform {
 
         glomRDD.collect().foreach(data=> println(data.mkString(",")))
 
+            /*
+            1,1
+            2,3,4
+             */
 
 
-        new util.ArrayList()
         sc.stop()
 
 

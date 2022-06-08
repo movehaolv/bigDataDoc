@@ -59,7 +59,7 @@ public class WindowTest1_TimeWindow {
 //        dataStream.print();
 
         // 开窗测试  , AggregateFunction 是增量，WindowFunction和ProcessWindowFunction是全量，像aggregate可以包含增量和全量aggregate
-        // (AggregateFunction, WindowFunction)
+        // (AggregateFunction, WindowFunction)  // src\main\java\com\atguigu\networkflow_analysis\HotPages.java
 
         // 1. 增量聚合函数 AggregateFunction
         DataStream<Integer> resultStream = dataStream.keyBy("id")

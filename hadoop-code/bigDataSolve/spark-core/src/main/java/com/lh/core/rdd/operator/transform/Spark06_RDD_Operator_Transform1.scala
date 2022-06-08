@@ -17,7 +17,10 @@ object Spark06_RDD_Operator_Transform1 {
         val groupRDD = rdd.groupBy(_.charAt(0))
 
         groupRDD.collect().foreach(println)
-
+/*
+(H,CompactBuffer(Hello, Hadoop))
+(S,CompactBuffer(Spark, Scala))
+ */
 
         sc.stop()
 
