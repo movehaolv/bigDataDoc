@@ -11,7 +11,8 @@ public class TopNDriver {
 
 	public static void main(String[] args) throws Exception {
 
-		args = new String[] { "e:/output1", "e:/output3" };
+		args = new String[] { "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\mr_0529\\src\\main\\java\\com" +
+				"\\atguigu\\mr\\topn\\input1", "output5" };
 
 		// 1 获取配置信息，或者job对象实例
 		Configuration configuration = new Configuration();

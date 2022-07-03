@@ -1,4 +1,4 @@
-##### windowsAll && window
+##### windowsAll && window(直接看聚合章节)
 
 ```tex
 需求：将无限流数据按5秒一个窗口，处理数据批量写入phoenix
@@ -14,6 +14,17 @@
     WindowAll并行度只能1，不可设置，适用于数据量不大的情况。
 
     KeyBy Window的并行度，可按Key设置，适用于大数据量。
+```
+
+#### processElement
+
+```java
+// com\atguigu\market_analysis\AdStatisticsByProvince.java
+if( curCount >= countUpperBound ){
+// 判断是否输出到黑名单过，如果没有的话就输出到侧输出流
+		ctx.output( new OutputTag<BlackListUserWarning>("blacklist"){},
+}
+out.collect(value);
 ```
 
 
@@ -54,15 +65,15 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
                
 // ProcessWindowFunction是WindowFunction的加强版，可以获得上下文
 全量聚合 process(new ProcessWindowFunction) apply(new WindowFunction) // 一次性处理一个窗口的数据
-.aggregate(new AggregateFunction(), new WindowFunction()); // 前增量后全量
+.aggregate(new AggregateFunction(), new WindowFunction()); // 前增量后全量com.atguigu.networkflow_analysis.PageView
 .aggregate(new AggregateFunction(), new ProcessWindowFunction()); // ProcessWindowFunction可获取上下文 
 
 单次处理元素
-.process(new KeyedProcessFunction()) // 处理每个元素，底层API 
+.process(new KeyedProcessFunction()) // 处理每个元素，底层API  
 <==>
 .timeWindowAll(Time.hours(1))               
 .trigger( new MyTrigger() )
-.process( new ProcessAllWindowFunction() );               
+.process( new ProcessAllWindowFunction() );  // com\atguigu\networkflow_analysis\UvWithBloomFilter.java     
 ```
 
 - timeWindowAll
@@ -112,12 +123,95 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
  */
 ```
 
+#### CEP
+
+```java
+// src\main\java\com\atguigu\orderpay_detect\OrderPayTimeout.java
+// 1. 定义一个带时间限制的模式
+Pattern<OrderEvent, OrderEvent> orderPayPattern = Pattern
+    .<OrderEvent>begin("create").where(new SimpleCondition<OrderEvent>() {
+    @Override
+    public boolean filter(OrderEvent value) throws Exception {
+        return "create".equals(value.getEventType());
+    }
+})
+    .followedBy("pay").where(new SimpleCondition<OrderEvent>() {
+    @Override
+    public boolean filter(OrderEvent value) throws Exception {
+        return "pay".equals(value.getEventType());
+    }
+})
+    .within(Time.minutes(15));
+
+
+// 2. 定义侧输出流标签，用来表示超时事件
+OutputTag<OrderResult> orderTimeoutTag = new OutputTag<OrderResult>("order-timeout"){};
+
+// 3. 将pattern应用到输入数据流上，得到pattern stream
+PatternStream<OrderEvent> patternStream = CEP.pattern(orderEventStream.keyBy(OrderEvent::getOrderId), orderPayPattern);
+
+// 4. 调用select方法，实现对匹配复杂事件和超时复杂事件的提取和处理
+SingleOutputStreamOperator<OrderResult> resultStream = patternStream
+    .select(orderTimeoutTag, new OrderTimeoutSelect(), new OrderPaySelect());
+
+resultStream.print("payed normally");
+resultStream.getSideOutput(orderTimeoutTag).print("timeout");
+
+    // 实现自定义的超时事件处理函数
+    public static class OrderTimeoutSelect implements PatternTimeoutFunction<OrderEvent, OrderResult>{
+        @Override
+        public OrderResult timeout(Map<String, List<OrderEvent>> pattern, long timeoutTimestamp) throws Exception {
+            Long timeoutOrderId = pattern.get("create").iterator().next().getOrderId();
+            return new OrderResult(timeoutOrderId, "timeout " + timeoutTimestamp);
+        }
+    }
+
+    // 实现自定义的正常匹配事件处理函数
+    public static class OrderPaySelect implements PatternSelectFunction<OrderEvent, OrderResult>{
+        @Override
+        public OrderResult select(Map<String, List<OrderEvent>> pattern) throws Exception {
+            Long payedOrderId = pattern.get("pay").iterator().next().getOrderId();
+            return new OrderResult(payedOrderId, "payed");
+        }
+    }
+
+```
+
 
 
 ##### WaterMark
 
--  AscendingTimestampExtractor 的WM为当前事件时间-1毫秒
-- 事件时间的WM默认200ms生成一次，所以读取文件的ctx.timerService().currentWatermark()可能都是-9223372036854775808
+- AssignerWithPunctuatedWatermarks（为每条消息都会尝试生成水印）
+
+  ```java
+  public static class MyPunctuatedAssigner implements AssignerWithPunctuatedWatermarks<SensorReading>{
+  
+      private Long bound = 60 * 1000L;    // 延迟一分钟
+      
+      @Nullable
+      @Override
+      public Watermark checkAndGetNextWatermark(SensorReading lastElement, long extractedTimestamp) {
+          if(lastElement.getId().equals("sensor_1"))
+              return new Watermark(extractedTimestamp - bound);
+          else
+              return null;
+      }
+      
+      @Override
+      public long extractTimestamp(SensorReading element, long previousElementTimestamp) {
+          return element.getTimestamp();
+      }
+  }
+  
+  ```
+
+- AssignerWithPeriodicWatermarks （周期性的生成水印，不会针对每条消息都生成）
+
+  - BoundedOutOfOrdernessTimestampExtractor
+  - AscendingTimestampExtractor（AscendingTimestampExtractor 的WM为当前事件时间-1毫秒，因为数据时间是严格单调递增的，不会存在乱序，`Watermark = urrentTimestamp - 1`，这里-1是因为Watermark是左闭右开的）- 
+  - 事件时间的WM默认200ms生成一次，所以读取文件的ctx.timerService().currentWatermark()可能都是-9223372036854775808
+
+- 还有第三种策略是 无为策略：不设定watermark策略。
 
 ##### Planner
 
@@ -242,6 +336,8 @@ Context可以访问元素的时间戳，元素的 key。这是因为keyBy(field)
 
 
 ![image-20220529173230418](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\spark-yarn.png)
+
+Yarn 框架收到指令后会在指定的 NM 中启动ApplicationMaster；ApplicationMaster 启动 Driver 线程，执行用户的作业；
 
 ![image-20220529163957321](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\flink-yarn.png)
 

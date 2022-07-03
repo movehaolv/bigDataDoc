@@ -46,7 +46,7 @@
 
 ### 9、map与flatMap的区别？ 
 
-### ![img](D:\workLv\learn\proj\hadoop-doc\面试系列\pics\Spark面试题Pics\flatten) 
+### ![img](..\pics\Spark面试题Pics\flatten) 
 
 &emsp; map：对RDD每个元素转换，文件中的每一行数据返回一个数组对象。   
 &emsp; flatMap：对RDD每个元素转换，然后再扁平化。   

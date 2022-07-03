@@ -28,6 +28,10 @@ import java.net.URL;
 /**
  * @ClassName: TxPayMatch
  * @Description:
+ * 对于订单支付事件，用户支付完成其实并不算完，我们还得确认平台账户上是
+ * 否到账了。而往往这会来自不同的日志信息，所以我们要同时读入两条流的数据来
+ * 做 合 并 处 理 。 这 里 我 们 利 用 connect 将 两 条 流 进 行 连 接 ， 然 后 用 自 定 义 的
+ * CoProcessFunction 进行处理
  * @Author: wushengran on 2020/11/18 14:18
  * @Version: 1.0
  */

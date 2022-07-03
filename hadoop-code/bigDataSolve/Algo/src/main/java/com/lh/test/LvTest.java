@@ -47,9 +47,7 @@ class P{
 public class LvTest {
 
     public static void main(String[] args) throws Exception {
-        Path path = Paths.get("E:\\cc\\aa.py");
-        findJava(path);
-
+        System.out.println(2<<2);
     }
 
 

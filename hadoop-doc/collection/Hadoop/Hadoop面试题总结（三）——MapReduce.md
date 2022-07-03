@@ -70,12 +70,12 @@ FileInputFormat源码解析(input.getSplits(job))
 
 ### 6、MapTask和ReduceTask工作机制（☆☆☆☆☆）（也可回答MapReduce工作原理）
 **MapTask工作机制**
+
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/MR-Pics/MapTask%E5%B7%A5%E4%BD%9C%E6%9C%BA%E5%88%B6.png"/>  
+<img src="../pics\Hadoop面试题Pics\MR-Pics\MapTask工作机制.png"/>  
 <p align="center">
 </p>
 </p>  
-
 （1）Read阶段：Map Task通过用户编写的RecordReader，从输入InputSplit中解析出一个个key/value。  
 （2）Map阶段：该节点主要是将解析出的key/value交给用户编写map()函数处理，并产生一系列新的key/value。  
 （3）Collect收集阶段：在用户编写map()函数中，当数据处理完成后，一般会调用OutputCollector.collect()输出结果。在该函数内部，它会将生成的key/value分区（调用Partitioner），并写入一个环形内存缓冲区中。  
@@ -84,7 +84,7 @@ FileInputFormat源码解析(input.getSplits(job))
 
 **ReduceTask工作机制**
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/MR-Pics/ReduceTask%E5%B7%A5%E4%BD%9C%E6%9C%BA%E5%88%B6.png"/>  
+<img src="../pics\Hadoop面试题Pics\MR-Pics\ReduceTask工作机制.png"/>  
 <p align="center">
 </p>
 </p>  
@@ -117,7 +117,7 @@ FileInputFormat源码解析(input.getSplits(job))
 &emsp; （2）一个是在reduce side发生在copy后 reduce前。  
 
 ### 8、描述mapReduce中shuffle阶段的工作流程，如何优化shuffle阶段（☆☆☆☆☆）
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/MR-Pics/mapReduce%E4%B8%ADshuffle%E9%98%B6%E6%AE%B5%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B.png"/>  
+<img src="../pics\Hadoop面试题Pics\MR-Pics\mapReduce中shuffle阶段的工作流程.png"/>  
 
 分区，排序，溢写，拷贝到对应reduce机器上，增加combiner，压缩溢写的文件。  
 
@@ -128,7 +128,7 @@ FileInputFormat源码解析(input.getSplits(job))
 &emsp; Combiner是在每一个maptask所在的节点运行；  
 &emsp; Reducer是接收全局所有Mapper的输出结果。  
 
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/MR-Pics/mapReduce%E4%B8%ADcombiner%E4%BD%9C%E7%94%A8.png"/>
+<img src="../pics\Hadoop面试题Pics\MR-Pics\mapReduce中combiner作用.png"/>
 
 ### 10、如果没有定义partitioner，那数据在被送达reducer前是如何被分区的？
 &emsp; 如果没有自定义的 partitioning，则默认的 partition 算法，即根据每一条数据的 key 的 hashcode 值摸运算（%）reduce 的数量，得到的数字就是“分区号“。  

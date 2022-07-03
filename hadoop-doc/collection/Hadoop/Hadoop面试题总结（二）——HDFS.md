@@ -28,8 +28,9 @@
 ### 7、HDFS的存储机制（☆☆☆☆☆）  
 &emsp; HDFS存储机制，包括HDFS的**写入数据过程**和**读取数据过程**两部分  
 &emsp; **HDFS写数据过程**  
+
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/HDFS%E5%86%99%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A8%8B.png"/>  
+<img src="../pics\Hadoop面试题Pics\HDFS写数据流程.png"/>  
 <p align="center">
 </p>
 </p>  
@@ -46,7 +47,7 @@ dn1每传一个packet会放入一个应答队列等待应答。
 
 &emsp; **HDFS读数据过程**  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/HDFS%E8%AF%BB%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A8%8B.png"/>  
+<img src="../pics\Hadoop面试题Pics\HDFS读数据流程.png"/>  
 <p align="center">
 </p>
 </p>  
@@ -58,7 +59,7 @@ dn1每传一个packet会放入一个应答队列等待应答。
 
 ### 8、secondary namenode工作机制（☆☆☆☆☆）  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/secondary%20namenode%E5%B7%A5%E4%BD%9C%E6%9C%BA%E5%88%B6.png"/>  
+<img src="../pics\Hadoop面试题Pics\secondary namenode工作机制.png"/>  
 <p align="center">
 </p>
 </p>  
@@ -89,10 +90,11 @@ dn1每传一个packet会放入一个应答队列等待应答。
 
 ### 10、HDFS组成架构（☆☆☆☆☆）  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/HDFS%E7%BB%84%E6%88%90%E6%9E%B6%E6%9E%84.png"/>  
+<img src="../pics\Hadoop面试题Pics\HDFS组成架构.png"/>  
 <p align="center">
 </p>
 </p>  
+
 
 架构主要由四个部分组成，分别为**HDFS Client、NameNode、DataNode和Secondary NameNode**。下面我们分别介绍这四个组成部分。  
 1）Client：就是客户端。       
@@ -116,14 +118,15 @@ dn1每传一个packet会放入一个应答队列等待应答。
 
 ### 11、HAnamenode 是如何工作的? （☆☆☆☆☆）  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/HAnamenode%E5%B7%A5%E4%BD%9C%E6%9C%BA%E5%88%B6.png"/>  
+<img src="../pics\Hadoop面试题Pics\HAnamenode工作机制.png"/>  
 <p align="center">
 </p>
 </p>  
 
+
 ZKFailoverController主要职责  
 &emsp; 1）健康监测：周期性的向它监控的NN发送健康探测命令，从而来确定某个NameNode是否处于健康状态，如果机器宕机，心跳失败，那么zkfc就会标记它处于一个不健康的状态。  
-&emsp; 2）会话管理：如果NN是健康的，zkfc就会在zookeeper中保持一个打开的会话，如果NameNode同时还是Active状态的，那么zkfc还会在Zookeeper中占有一个类型为短暂类型的znode，当这个NN挂掉时，这个znode将会被删除，然后备用的NN，将会得到这把锁，升级为主NN，同时标记状态为Active。  
+&emsp; 2）会话管理：如果NN是健康的，zkfc就会在zookeeper中保持一个打开的会话，如果NameNode同时还是Active状态的，那么zkfc还会在Zookeeper中占有一个类型为短暂类型的znode，当这个NN挂掉时，这个znode将会被删除，然后备用的NN，s将会得到这把锁，升级为主NN，同时标记状态为Active。  
 &emsp; 3）当宕机的NN新启动时，它会再次注册zookeper，发现已经有znode锁了，便会自动变为Standby状态，如此往复循环，保证高可靠，需要注意，目前仅仅支持最多配置2个NN。  
 &emsp; 4）master选举：如上所述，通过在zookeeper中维持一个短暂类型的znode，来实现抢占式的锁机制，从而判断那个NameNode为Active状态  
 

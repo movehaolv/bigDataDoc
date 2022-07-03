@@ -3,7 +3,7 @@
 ### 1、请简述Zookeeper的选举机制
 &emsp; 假设有五台服务器组成的zookeeper集群，它们的id从1-5，同时它们都是最新启动的，也就是没有历史数据，在存放数据量这一点上，都是一样的。
 假设这些服务器依序启动，来看看会发生什么。  
-<img src="https://github.com/Dr11ft/BigDataGuide/blob/master/Pics/ZK%E9%9D%A2%E8%AF%95%E9%A2%98Pics/ZK%E9%80%89%E4%B8%BE%E6%9C%BA%E5%88%B6.png"/>  
+<img src="../pics\ZK面试题Pics\ZK选举机制.png"/>  
 &emsp; （1）服务器1启动，此时只有它一台服务器启动了，它发出去的报没有任何响应，所以它的选举状态一直是LOOKING状态。  
 &emsp; （2）服务器2启动，它与最开始启动的服务器1进行通信，互相交换自己的选举结果，由于两者都没有历史数据，所以id值较大的服务器2胜出，
 但是由于没有达到超过半数以上的服务器都同意选举它(这个例子中的半数以上是3)，所以服务器1、2还是继续保持LOOKING状态。  
@@ -107,7 +107,7 @@ Zookeeper 的很多功能都是基于这个特性实现的，后面在典型的�
 &emsp; ZooKeeper选择了基于通知（notification）的机制，即：客户端向ZooKeeper注册需要接受通知的znode，通过znode设置监控点（watch）来接受通知。
 监视点是一个单次触发的操作，意即监视点会触发一个通知。为了接收多个通知，客户端必须在每次通知后设置一个新的监视点。在下图阐述的情况下，
 当节点/task发生变化时，客户端会受到一个通知，并从ZooKeeper读取一个新值。  
-<img src="https://github.com/Dr11ft/BigDataGuide/blob/master/Pics/ZK%E9%9D%A2%E8%AF%95%E9%A2%98Pics/ZK%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6.png"/>  
+<img src="../pics\ZK面试题Pics\ZK通知机制.png"/>  
 
 ### 16、ZooKeeper的监听原理是什么？
 &emsp; 在应用程序中，mian()方法首先会创建zkClient，创建zkClient的同时就会产生两个进程，即Listener进程（监听进程）和
@@ -115,7 +115,7 @@ connect进程（网络连接/传输进程），当zkClient调用getChildren()等
 注册后的监听器位于ZooKeeper的监听器列表中，监听器列表中记录了zkClient的IP，端口号以及要监控的路径，一旦目标文件发生变化，
 ZooKeeper就会把这条消息发送给对应的zkClient的Listener()进程，Listener进程接收到后，就会执行process()方法，
 在process()方法中针对发生的事件进行处理。  
-<img src="https://github.com/Dr11ft/BigDataGuide/blob/master/Pics/ZK%E9%9D%A2%E8%AF%95%E9%A2%98Pics/ZK%E7%9B%91%E5%90%AC%E5%8E%9F%E7%90%86.png"/>  
+<img src="../pics\ZK面试题Pics\ZK监听原理.png"/>  
 
 ### 17、请说明ZooKeeper使用到的各个端口的作用？
 &emsp; 2888：Follower与Leader交换信息的端口。  

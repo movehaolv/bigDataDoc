@@ -20,11 +20,14 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
+import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
+import javax.annotation.Nullable;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -41,15 +44,16 @@ public class LoginFail {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-
+//        env.getConfig().setAutoWatermarkInterval(1);
         // 1. 从文件中读取数据
-//        URL resource = LoginFail.class.getResource("/LoginLog.csv");
-//        DataStream<LoginEvent> loginEventStream = env.readTextFile(resource.getPath())
-        DataStream<LoginEvent> loginEventStream = env.socketTextStream("node01", 7777)
+        URL resource = LoginFail.class.getResource("/LoginLog.csv");
+        DataStream<LoginEvent> loginEventStream = env.readTextFile(resource.getPath())
+//        DataStream<LoginEvent> loginEventStream = env.socketTextStream("node01", 7777)
                 .map(line -> {
                     String[] fields = line.split(",");
                     return new LoginEvent(new Long(fields[0]), fields[1], fields[2], new Long(fields[3]));
                 })
+
                 .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<LoginEvent>(Time.seconds(3)) {
                     @Override
                     public long extractTimestamp(LoginEvent element) {
@@ -60,7 +64,7 @@ public class LoginFail {
         // 自定义处理函数检测连续登录失败事件
         SingleOutputStreamOperator<LoginFailWarning> warningStream = loginEventStream
                 .keyBy(LoginEvent::getUserId)
-                .process(new LoginFailDetectWarning(2));
+                .process(new LoginFailDetectWarning0(2));
 
         warningStream.print();
 
@@ -93,10 +97,11 @@ public class LoginFail {
             if( "fail".equals(value.getLoginState()) ){
                 // 1. 如果是失败事件，添加到列表状态中
                 loginFailEventListState.add(value);
+//                System.out.println(ctx.timerService().currentWatermark());
                 // 如果没有定时器，注册一个2秒之后的定时器
                 if( timerTsState.value() == null ){
                     Long ts = (value.getTimestamp() + 2) * 1000L;
-                    System.out.println("注册定时器 " + ts);
+                    System.out.println("注册定时器 " + ts );
                     ctx.timerService().registerEventTimeTimer(ts);
                     timerTsState.update(ts);
                 }
@@ -111,10 +116,9 @@ public class LoginFail {
 
         @Override
         public void onTimer(long timestamp, OnTimerContext ctx, Collector<LoginFailWarning> out) throws Exception {
-            // 定时器触发，说明2秒内没有登录成功来，判断ListState中失败的个数
+            // 定时器触发，说明2秒内没有登录成功来，判断ListState中失败的个数   这里的需要使用socket流程进行配置，因为一次性读取文件的wm不会变更导致Timer不会触发
             ArrayList<LoginEvent> loginFailEvents = Lists.newArrayList(loginFailEventListState.get());
             Integer failTimes = loginFailEvents.size();
-
             if( failTimes >= maxFailTimes ){
                 // 如果超出设定的最大失败次数，输出报警
                 out.collect( new LoginFailWarning(ctx.getCurrentKey(),
@@ -128,6 +132,16 @@ public class LoginFail {
             timerTsState.clear();
         }
     }
+    /*
+                上一节的代码实现中我们可以看到，直接把每次登录失败的数据存起来、设置
+            定时器一段时间后再读取，这种做法尽管简单，但和我们开始的需求还是略有差异
+            的。这种做法只能隔 2 秒之后去判断一下这期间是否有多次失败登录，而不是在一
+            次登录失败之后、再一次登录失败时就立刻报警。这个需求如果严格实现起来，相
+            当于要判断任意紧邻的事件，是否符合某种模式。
+            于是我们可以想到，这个需求其实可以不用定时器触发，直接在状态中存取上
+            一次登录失败的事件，每次都做判断和比对，就可以实现最初的需求。
+            上节的代码 MatchFunction 中删掉 onTimer， processElement 改为：
+     */
 
     // 实现自定义KeyedProcessFunction
     public static class LoginFailDetectWarning extends KeyedProcessFunction<Long, LoginEvent, LoginFailWarning> {
@@ -163,7 +177,7 @@ public class LoginFail {
                     }
 
                     // 不管报不报警，这次都已处理完毕，直接更新状态
-//                    loginFailEventListState.clear();
+                    loginFailEventListState.clear();
                     loginFailEventListState.add(value);
                 } else {
                     // 1.2 如果没有登录失败，直接将当前事件存入ListState

@@ -12,10 +12,11 @@
 &emsp; Hadoop中常用的压缩算法有**bzip2、gzip、lzo、snappy**，其中lzo、snappy需要操作系统安装native库才可以支持。  
 &emsp; 数据可以压缩的位置如下所示。  
 <p align="center">
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/YARN-Pics/MapReduce%E6%95%B0%E6%8D%AE%E5%8E%8B%E7%BC%A9.png"/>  
+<img src="../pics\Hadoop面试题Pics\YARN-Pics\MapReduce数据压缩.png"/>  
 <p align="center">
 </p>
 </p>  
+
 
 &emsp; **企业开发用的比较多的是snappy**。  
 

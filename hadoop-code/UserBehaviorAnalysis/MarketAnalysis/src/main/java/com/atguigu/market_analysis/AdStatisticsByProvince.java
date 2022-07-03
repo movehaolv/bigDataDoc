@@ -34,6 +34,13 @@ import java.sql.Timestamp;
 /**
  * @ClassName: AdStatisticsByProvince
  * @Description: 页面广告按照省份划分的点击量的统计
+ *
+ * 上节我们进行的点击量统计，同一用户的重复点击是会叠加计算的。在实际场
+ * 景中，同一用户确实可能反复点开同一个广告，这也说明了用户对广告更大的兴趣；
+ * 但是如果用户在一段时间非常频繁地点击广告， 这显然不是一个正常行为，有刷点
+ * 击量的嫌疑。所以我们可以对一段时间内（比如一天内）的用户点击行为进行约束，
+ * 如果对同一个广告点击超过一定限额（比如 100 次），应该把该用户加入黑名单并
+ * 报警，此后其点击行为不应该再统计。
  * @Author: wushengran on 2020/11/17 10:38
  * @Version: 1.0
  */
@@ -127,7 +134,7 @@ public class AdStatisticsByProvince {
 
         @Override
         public void processElement(AdClickEvent value, Context ctx, Collector<AdClickEvent> out) throws Exception {
-            // 判断当前用户对同一广告的点击次数，如果不够上限，就count加1正常输出；如果达到上限，直接过滤掉，并侧输出流输出黑名单报警
+            // 判断当前用户对同一广告的点击次数，如果不够上限，PageView就count加1正常输出；如果达到上限，直接过滤掉，并侧输出流输出黑名单报警
             // 首先获取当前的count值
             Long curCount = countState.value();
 

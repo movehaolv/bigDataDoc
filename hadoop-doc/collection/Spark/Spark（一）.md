@@ -20,6 +20,23 @@
 &emsp; 2）高效的调度算法，基于DAG；  
 &emsp; 3）容错机制Linage，精华部分就是DAG和Lingae  
 
+```
+ DAG，有向无环图，Directed Acyclic Graph的缩写，常用于建模。Spark中使用DAG对RDD的关系进行建模，描述了RDD的依赖关系，这种关系也被称之为lineage，RDD的依赖关系使用Dependency维护，参考Spark RDD之Dependency，DAG在Spark中的对应的实现为DAGScheduler。
+————————————————
+版权声明：本文为CSDN博主「zhangvalue」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/zhangvalue/article/details/84780428
+
+https://zhuanlan.zhihu.com/p/470482936
+Spark的任务调度从 DAG 划分开始，由 DAGScheduler 完成
+DAGScheduler 根据 RDD 的血缘关系构成的 DAG 进行切分，将一个Job划分为若干Stages
+具体划分策略是：
+从最后一个RDD开始，通过回溯依赖判断父依赖是否是宽依赖（即以Shuffle为界），划分Stage；
+
+
+```
+
+
+
 ### 3、简单说一下hadoop和spark的shuffle相同和差异？（☆☆☆☆☆）  
 &emsp; 1）从 high-level 的角度来看，两者并没有大的差别。 都是将 mapper（Spark 里是 ShuffleMapTask）的输出进行 partition，不同的 partition 送到不同的 reducer（Spark 里 reducer 可能是下一个 stage 里的 ShuffleMapTask，也可能是 ResultTask）。Reducer 以内存作缓冲区，边 shuffle 边 aggregate 数据，等到数据 aggregate 好以后进行 reduce() （Spark 里可能是后续的一系列操作）。  
 &emsp; 2）从 low-level 的角度来看，两者差别不小。 Hadoop MapReduce 是 sort-based，进入 combine() 和 reduce() 的 records 必须先 sort。这样的好处在于 combine/reduce() 可以处理大规模的数据，因为其输入数据可以通过外排得到（mapper 对每段数据先做排序，reducer 的 shuffle 对排好序的每段数据做归并）。目前的 Spark 默认选择的是 hash-based，通常使用 HashMap 来对 shuffle 来的数据进行 aggregate，不会对数据进行提前排序。如果用户需要经过排序的数据，那么需要自己调用类似 sortByKey() 的操作；如果你是Spark 1.1的用户，可以将spark.shuffle.manager设置为sort，则会对数据进行排序。在Spark 1.2中，sort将作为默认的Shuffle实现。  

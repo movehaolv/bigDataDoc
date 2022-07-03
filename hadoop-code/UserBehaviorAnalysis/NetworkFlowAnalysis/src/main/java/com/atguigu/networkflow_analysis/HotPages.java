@@ -24,6 +24,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
@@ -56,6 +57,9 @@ import java.util.regex.Pattern;
  * @Version: 1.0
  */
 public class HotPages {
+
+
+
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
@@ -63,8 +67,8 @@ public class HotPages {
 //        env.getConfig().setAutoWatermarkInterval(200000);
 
         // 读取文件，转换成POJO
-//        URL resource = HotPages.class.getResource("/test.log");
-        URL resource = HotPages.class.getResource("/apache.log");
+        URL resource = HotPages.class.getResource("/test.log");
+//        URL resource = HotPages.class.getResource("/apache.log");
         DataStream<String> inputStream = env.readTextFile(resource.getPath());
 //        DataStream<String> inputStream = env.socketTextStream("192.168.17.133", 7777);
 
@@ -82,7 +86,7 @@ public class HotPages {
                     }
                 });
 
-        dataStream.print("data");
+//        dataStream.print("data");
 
         // 分组开窗聚合
 
