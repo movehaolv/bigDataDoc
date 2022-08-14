@@ -1,6 +1,7 @@
 package com.lh.heap;
 
 public class Heap<T extends Comparable<T>> {
+    // 堆中仅仅规定了每个结点大于等于它的两个子结点，但这两个子结点的顺序并没有做规定
     //存储堆中的元素
     private T[] items;
     //记录堆中元素的个数

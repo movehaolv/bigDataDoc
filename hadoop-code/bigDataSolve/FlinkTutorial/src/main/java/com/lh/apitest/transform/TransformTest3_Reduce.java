@@ -25,10 +25,12 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 public class TransformTest3_Reduce {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4);
+        env.setParallelism(1);
 
         // 从文件读取数据
-        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
+        DataStream<String> inputStream = env.readTextFile(TransformTest3_Reduce.class.getClassLoader().getResource(
+                "sensor" +
+                ".txt").getPath());
 
         // 转换成SensorReading类型
         DataStream<SensorReading> dataStream = inputStream.map(line -> {

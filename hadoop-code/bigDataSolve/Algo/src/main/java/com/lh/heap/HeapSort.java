@@ -1,5 +1,7 @@
 package com.lh.heap;
 
+import java.util.Arrays;
+
 public class HeapSort {
     //判断heap堆中索引i处的元素是否小于索引j处的元素
     private static  boolean less(Comparable[] heap, int i, int j) {
@@ -20,7 +22,7 @@ public class HeapSort {
         //把source中的元素拷贝到heap中，heap中的元素就形成一个无序的堆
         System.arraycopy(source,0,heap,1,source.length);
 
-        //对堆中的元素做下沉调整(从长度的一半处开始，往索引1处扫描)
+        //对堆中的元素做下沉调整(从长度的一半处开始，往索引1处扫描)， 一半后往右的都是叶子节点没必要下沉处理
         for (int i = (heap.length)/2;i>0;i--){
             sink(heap,i,heap.length-1);
         }
