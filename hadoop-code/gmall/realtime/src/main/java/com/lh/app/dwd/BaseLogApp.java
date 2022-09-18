@@ -1,11 +1,9 @@
-package com.lh.gmall.realtime.app.dwd;
+package com.lh.app.dwd;
 
-import akka.stream.OutPort;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.lh.gmall.realtime.utils.MyKafkaUtil;
-import org.apache.flink.api.common.functions.RichMapFunction;
+import com.lh.utils.MyKafkaUtil;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;

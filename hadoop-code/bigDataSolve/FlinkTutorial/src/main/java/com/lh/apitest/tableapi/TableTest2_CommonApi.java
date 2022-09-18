@@ -8,7 +8,9 @@ package com.lh.apitest.tableapi;/**
  * Created by wushengran on 2020/11/13 10:29
  */
 
+import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
@@ -45,6 +47,7 @@ public class TableTest2_CommonApi {
                 .inStreamingMode()
                 .build();
         StreamTableEnvironment oldStreamTableEnv = StreamTableEnvironment.create(env, oldStreamSettings);
+        // or TableEnvironment fsTableEnv = TableEnvironment.create(oldStreamSettings);
 
         // 1.2 基于老版本planner的批处理
         ExecutionEnvironment batchEnv = ExecutionEnvironment.getExecutionEnvironment();
@@ -56,7 +59,7 @@ public class TableTest2_CommonApi {
                 .inStreamingMode()
                 .build();
         StreamTableEnvironment blinkStreamTableEnv = StreamTableEnvironment.create(env, blinkStreamSettings);
-
+        // or TableEnvironment bsTableEnv = TableEnvironment.create(blinkStreamSettings);
 //         1.4 基于Blink的批处理
         EnvironmentSettings blinkBatchSettings = EnvironmentSettings.newInstance()
                 .useBlinkPlanner()
@@ -64,9 +67,10 @@ public class TableTest2_CommonApi {
                 .build();
         TableEnvironment blinkBatchTableEnv = TableEnvironment.create(blinkBatchSettings);
 
+
         // 2. 表的创建：连接外部系统，读取数据
         // 2.1 读取文件
-        String filePath = "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt";
+        String filePath = "D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\resources\\sensor.txt";
 
 
 
@@ -89,12 +93,14 @@ public class TableTest2_CommonApi {
         Table resultTable = inputTable1.select("id, temp")
                 .filter("id === 'sensor_6'");
 
+
         // 聚合统计
         Table aggTable = inputTable1.groupBy("id")
                 .select("id, id.count as count, temp.avg as avgTemp");
 
         // 3.2 SQL
-        tableEnv.sqlQuery("select id, temp from inputTable where id = 'senosr_6'");
+        Table sqlQuery = tableEnv.sqlQuery("select id, temp from inputTable where id = 'sensor_6'");
+
         Table sqlAggTable = tableEnv.sqlQuery("select id, count(id) as cnt, avg(temp) as avgTemp from inputTable group by id");
 
         // 打印输出
@@ -107,10 +113,27 @@ public class TableTest2_CommonApi {
          */
 
 
-        tableEnv.toAppendStream(resultTable, Row.class).print("result");
-        tableEnv.toRetractStream(aggTable, Row.class).print("agg");
-        tableEnv.toRetractStream(sqlAggTable, Row.class).print("sqlagg");
+//        tableEnv.toAppendStream(resultTable, Row.class).print("result");
+        tableEnv.toAppendStream(sqlQuery, Row.class).print("sqlQuery");
+//        tableEnv.toRetractStream(aggTable, Row.class).print("agg");
+//        tableEnv.toRetractStream(sqlAggTable, Row.class).print("sqlagg");
 
         env.execute();
     }
 }
+
+
+/*
+
+        agg> (true,sensor_1,1,35.8)
+        agg> (true,sensor_6,1,15.4)
+        agg> (true,sensor_7,1,6.7)
+        agg> (true,sensor_10,1,38.1)
+        agg> (false,sensor_1,1,35.8)
+        agg> (true,sensor_1,2,36.05)
+        agg> (false,sensor_1,2,36.05)
+        agg> (true,sensor_1,3,34.96666666666666)
+        agg> (false,sensor_1,3,34.96666666666666)
+        agg> (true,sensor_1,4,35.5)
+
+ */

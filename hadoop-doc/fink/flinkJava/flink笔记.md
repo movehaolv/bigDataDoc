@@ -58,14 +58,14 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
 
 ##### 聚合
 
-- keyBy().timeWindow
+- keyBy().timeWindow (timeWindow弃用，使用.window(TumblingEventTimeWindows.of(Time.seconds(10))))
 
 ```java
 增量聚合 aggregate(new AggregateFunction） 
                
 // ProcessWindowFunction是WindowFunction的加强版，可以获得上下文
 全量聚合 process(new ProcessWindowFunction) apply(new WindowFunction) // 一次性处理一个窗口的数据
-.aggregate(new AggregateFunction(), new WindowFunction()); // 前增量后全量com.atguigu.networkflow_analysis.PageView
+.aggregate(new AggregateFunction(), new WindowFunction()); // 前增量后全量 WIndowFunction 的Iterable<Long> input 应该只有一个值，com.atguigu.networkflow_analysis.PageView  // reduce也有此效果
 .aggregate(new AggregateFunction(), new ProcessWindowFunction()); // ProcessWindowFunction可获取上下文 
 
 单次处理元素
@@ -105,7 +105,7 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
   agg > PageViewCount{url='/present', windowEnd=1431829550000, count=1}
   
   // 第二次来了一条延迟数据  {ip='83.149.9.216', userId='-', timestamp=1431829549000, method='GET', url='/presentations/'}。url='/presentations/'会累计并输出，url='/present'不会输出了
-  agg > PageViewCount{url='/presentations/', windowEnd=1431829550000, count=2}
+  agg > PageViewCount{url='/0/', windowEnd=1431829550000, count=2}
   ```
 
   
@@ -123,11 +123,11 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
  */
 ```
 
-#### CEP
+##### CEP
 
 ```java
 // src\main\java\com\atguigu\orderpay_detect\OrderPayTimeout.java
-// 1. 定义一个带时间限制的模式
+// 1. 定义一个带时间限制的模式  A followedBy B不仅能匹配A B,还能匹配A C B，next：严格匹配
 Pattern<OrderEvent, OrderEvent> orderPayPattern = Pattern
     .<OrderEvent>begin("create").where(new SimpleCondition<OrderEvent>() {
     @Override
@@ -269,7 +269,7 @@ dataStream.keyBy("id")
           public Integer getKey(Long value) throws Exception {
           return value.intValue() % 2;
           }
-  });
+  });  // KeySelector<IN, KEY>
   // 2. 写字段，但是需要输入 DataStream<SensorReading> dataStream中为POJO
   KeyedStream<SensorReading, Tuple> keyedStream = dataStream.keyBy("id");
   // 3. 坐标，这种没有POJO的
@@ -298,6 +298,8 @@ dataStream.keyBy("id")
     触发的时间信息(事件时间或者处理时间)。
 
   - 综上，如果需要用到定时器，侧输出流，则可选择KeyedProcessFunction。如果只是需要用到状态编程则只需要用RichFlatMapFunction <ref：9.3.2 键控状态>
+
+#### 框架比较
 
 ##### SPARK VS FLINK
 
@@ -329,7 +331,7 @@ Context可以访问元素的时间戳，元素的 key。这是因为keyBy(field)
 
   
 
-### MR | SPARK | FLINK
+##### MR | SPARK | FLINK
 
 ![image-20220529173418419](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\mr-yarn.png)
 
@@ -340,4 +342,124 @@ Context可以访问元素的时间戳，元素的 key。这是因为keyBy(field)
 Yarn 框架收到指令后会在指定的 NM 中启动ApplicationMaster；ApplicationMaster 启动 Driver 线程，执行用户的作业；
 
 ![image-20220529163957321](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\flink-yarn.png)
+
+#### SQL & TableAPI
+
+##### 更新模式
+
+hadoop-code/bigDataSolve/FlinkTutorial/src/main/java/com/lh/apitest/tableapi/TableTest2_CommonApi.java
+
+![image-20220915224114115](../../\collection\pics\FlinkPics\lh\更新模式.png)
+
+#### 
+
+-  toAppend 这里虽然聚合了，但是开窗后并不需要撤回修改，可用toAppend
+
+![image-20220913152647022](../../\collection\pics\FlinkPics\lh\toAppend.png)
+
+- retract
+
+  ```java
+  // input
+  /*  
+      sensor_1,1547718199,35.8,2019-01-17 09:43:19
+      sensor_6,1547718201,15.4,2019-01-17 09:43:21
+      sensor_7,1547718202,6.7,2019-01-17 09:43:22
+      sensor_10,1547718205,38.1,2019-01-17 09:43:25
+      sensor_1,1547718207,36.3,2019-01-17 09:43:27
+      sensor_1,1547718209,32.8,2019-01-17 09:43:29
+      sensor_1,1547718212,37.1,2019-01-17 09:43:32
+  */
+  // 计算逻辑
+  Table aggTable = inputTable1.groupBy("id")
+      .select("id, id.count as count, temp.avg as avgTemp");
+  // 输出
+  /*
+      agg> (true,sensor_1,1,35.8)
+      agg> (true,sensor_6,1,15.4)
+      agg> (true,sensor_7,1,6.7)
+      agg> (true,sensor_10,1,38.1)
+      agg> (false,sensor_1,1,35.8)   // 1 如果是更新操作，那么会输出两条数据（上一条删除）
+      agg> (true,sensor_1,2,36.05)   // 2 下一条插入
+      agg> (false,sensor_1,2,36.05)
+      agg> (true,sensor_1,3,34.96666666666666)
+      agg> (false,sensor_1,3,34.96666666666666)
+      agg> (true,sensor_1,4,35.5)
+  */
+  ```
+
+- upsert
+
+  - 需要使用支持key的数据库，相当于hashmap，因为插入更新都编码为add消息，那么key存在则更新，不存在则插入，这样不像retract需要两条数据作为更新，只要一条数据即可。视频中为涉及相关联系
+
+##### API调用
+
+建立环境 
+
+建表/临时表 | 流转表
+
+对表进行业务处理（如果使用TableAPI需先转为Table对象）
+
+输出（）
+
+```java
+/* 
+create table: 会注册到系统Catalog(默认是VvpCatalog)，持久化。适合多个query共享元素及
+create temporary table:使用内存的Catalog，不持久化。适合不需共享元素据的场景，只给当前query查询
+create temporary view: 简化sql语句（create temporary view v1 as select * from order;），和数据库的view不一样，不会持久化
+statement set:( begin statement set; insert into t1...; insert into t2; end; ),适合需要输出到多个下游（sink）的场景
+*/
+
+// create a TableEnvironment for specific planner batch or streaming
+TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// create an input Table
+tableEnv.executeSql("CREATE TEMPORARY TABLE table1 ... WITH ( 'connector' = ... )");
+// register an output Table
+tableEnv.executeSql("CREATE TEMPORARY TABLE outputTable ... WITH ( 'connector' = ... )");
+
+// create a Table object from a Table API query
+Table table2 = tableEnv.from("table1").select(...);
+// create a Table object from a SQL query
+Table table3 = tableEnv.sqlQuery("SELECT ... FROM table1 ... ");
+
+// emit a Table API result Table to a TableSink, same for SQL result
+TableResult tableResult = table2.executeInsert("outputTable");
+tableResult...
+```
+
+（**注意：tableEnv.from("table1")会返回table对象，要Table对象才能进行select等API查询， sql可直接**sqlQuery等操作）
+
+此外，建临时表还可以通过以下方式
+
+```java
+// 1. 将流转化为表
+dataStream = env.readTextFile().map()
+Table sensorTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp");
+tableEnv.createTemporaryView("sensor", sensorTable);
+// 2 通过API建表
+tableEnv.connect( new FileSystem().path(filePath))
+                .withFormat( new Csv().fieldDelimiter(','))
+                .withSchema( new Schema()
+                        .field("id", DataTypes.STRING())
+                        .field("timestamp", DataTypes.BIGINT())
+                        .field("temp", DataTypes.DOUBLE())
+                )
+                .createTemporaryTable("inputTable")
+
+```
+
+输出
+
+```java
+// 1. 将表转化为流 来 输出
+DataStream<ProvinceStats> provinceStatsDataStream = tableEnv.toAppendStream(table, ProvinceStats.class);
+provinceStatsDataStream.addSink(kafka);
+
+// 2. Table对象输出到定义的表
+ table2.executeInsert("outputTable");
+
+// 3. sql插入
+tableEnv.executeSql("insert into outputTable select * from table1");
+```
 
