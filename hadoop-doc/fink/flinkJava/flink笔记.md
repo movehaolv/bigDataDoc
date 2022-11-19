@@ -1,3 +1,5 @@
+#### Flink杂记
+
 ##### windowsAll && window(直接看聚合章节)
 
 ```tex
@@ -16,7 +18,7 @@
     KeyBy Window的并行度，可按Key设置，适用于大数据量。
 ```
 
-#### processElement
+##### processElement
 
 ```java
 // com\atguigu\market_analysis\AdStatisticsByProvince.java
@@ -181,6 +183,8 @@ resultStream.getSideOutput(orderTimeoutTag).print("timeout");
 
 ##### WaterMark
 
+​	WM = 当前时间-乱序时间；当前WM时间下的数据到齐了
+
 - AssignerWithPunctuatedWatermarks（为每条消息都会尝试生成水印）
 
   ```java
@@ -213,6 +217,44 @@ resultStream.getSideOutput(orderTimeoutTag).print("timeout");
 
 - 还有第三种策略是 无为策略：不设定watermark策略。
 
+
+
+- 写 WM的两种方式  1.12 版本
+
+  - ```java
+    //TODO 3.将每行数据转换为JSON对象并提取时间戳生成Watermark
+    SingleOutputStreamOperator<JSONObject> jsonObjDS = kafkaDS.map(JSON::parseObject).assignTimestampsAndWatermarks(WatermarkStrategy.<JSONObject>forBoundedOutOfOrderness(Duration.ofSeconds(1)).withTimestampAssigner(new SerializableTimestampAssigner<JSONObject>() {
+        @Override
+        public long extractTimestamp(JSONObject element, long recordTimestamp) {
+            return element.getLong("ts");
+        }
+    }));
+    ```
+
+  - ```java
+    WatermarkStrategy<JSONObject> watermarkStrategy = WatermarkStrategy.<JSONObject>forMonotonousTimestamps().withTimestampAssigner(new SerializableTimestampAssigner<JSONObject>() {
+        @Override
+        public long extractTimestamp(JSONObject element, long recordTimestamp) {
+        return element.getLong("ts");
+        }
+    });
+    SingleOutputStreamOperator<JSONObject> jsonObjDS = kafkaDS.process(new ProcessFunction<String, JSONObject>() {
+            @Override
+            public void processElement(String s, Context context, Collector<JSONObject> collector) throws Exception {
+                try {
+                    JSONObject jsonObject = JSON.parseObject(s);
+                    collector.collect(jsonObject);
+                } catch (Exception e) {
+                	context.output(new OutputTag<String>("dirty") {}, s);
+                }
+            }
+    }).assignTimestampsAndWatermarks(watermarkStrategy);
+    ```
+
+    
+
+
+
 ##### Planner
 
  - hadoop-code/bigDataSolve/FlinkTutorial/src/main/java/com/lh/apitest/tableapi/TableTest2_CommonApi.java
@@ -232,7 +274,7 @@ dataStream.keyBy("id");
 //                })
            .apply(new WindowFunction<SensorReading, Tuple3<String, Long, Integer>, Tuple, TimeWindow>() {
                     @Override
-  public void apply(Tuple tuple, TimeWindow window, Iterable<SensorReading> input, Collector<Tuple3<String, Long, Integer>> out) throws Exception {
+ public void apply(Tuple tuple, TimeWindow window, Iterable<SensorReading> input, Collector<Tuple3<String, Long, Integer>> out) throws Exception {
                         String id = tuple.getField(0);
                         Long windowEnd = window.getEnd();
                         Integer count = IteratorUtils.toList(input.iterator()).size();
@@ -299,6 +341,81 @@ dataStream.keyBy("id")
 
   - 综上，如果需要用到定时器，侧输出流，则可选择KeyedProcessFunction。如果只是需要用到状态编程则只需要用RichFlatMapFunction <ref：9.3.2 键控状态>
 
+##### 状态编程
+
+```java
+private ValueState<String> dateState;
+
+@Override
+public void open(Configuration parameters) throws Exception {
+    ValueStateDescriptor<String> valueStateDescriptor = new ValueStateDescriptor<>("date-state", String.class);
+    //设置状态的超时时间以及更新时间的方式
+    StateTtlConfig stateTtlConfig = new StateTtlConfig
+        .Builder(Time.hours(24))
+        .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
+        .build();
+    valueStateDescriptor.enableTimeToLive(stateTtlConfig);
+    dateState = getRuntimeContext().getState(valueStateDescriptor);
+}
+```
+
+##### FlinkCDC
+
+```java
+DebeziumSourceFunction<String> build = MySQLSource.<String>builder()
+    .hostname("node01")
+    .port(3306)
+    .username("root")
+    .password("000000")
+    .databaseList("gmall2021")
+    .tableList("gmall2021.base_trademark, gmall2021.order_info")
+    .startupOptions(StartupOptions.initial())
+    .deserializer(new CustomerDeserialization())
+    .build();
+
+DataStreamSource<String> source = env.addSource(build);
+source.print()
+/*
+1. 修改mysql配置，后重启
+vim /etc/my.cnf
+    server-id = 1
+    log-bin=mysql-bin
+    binlog_format=row
+    binlog-do-db=gmall2021
+2. 监测/var/lib/mysql 下的mysql-bin.000026文件，表有任何改动会记录在里面。当然数据删除也会记录，mysql-bin.000026这个文件会增大，初次运行以上代码，会将现有数据库现有记录输出，数据格式如下，before都是{},都是insert
+{"database":"gmall2021","before":{},"after":{"birthday":"1965-12-04","gender":"F","create_time":"2020-12-04 20:21:47","login_name":"hu6er28gwu39","nick_name":"伊伊","name":"伏艺","user_level":"1","phone_num":"13396193213","id":716,"email":"hu6er28gwu39@qq.com","operate_time":"2020-12-04 23:12:40"},"type":"insert","table":"user_info"}
+如果是update，则before和after都不为空
+如果是delete，则before有值，after为空
+*/
+```
+
+##### JSONObject
+
+
+
+```java
+public class Extend {
+// 从左往右自动(去除下划线)匹配进行模糊匹配
+    public static void main(String[] args) {
+        testJsonObject();
+    }
+
+    public static void testJsonObject(){
+        Be be = JSON.parseObject("{'userId':'Atguigu', 'age':11, 'user_id':'tom','GENder':'female' }", Be.class);
+        System.out.println(be); // Be(user_id=Atguigu, age=11, gender=female)
+    }
+}
+
+
+@Data
+class Be{
+    String user_id;
+    int age;
+    String gender;
+}
+
+```
+
 #### 框架比较
 
 ##### SPARK VS FLINK
@@ -344,6 +461,58 @@ Yarn 框架收到指令后会在指定的 NM 中启动ApplicationMaster；Applic
 ![image-20220529163957321](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\flink-yarn.png)
 
 #### SQL & TableAPI
+
+##### 阿里链接
+
+http://e.betheme.net/article/show-1029277.html?action=onClick
+
+https://www.ngui.cc/el/1759712.html?action=onClick
+
+##### 终端执行
+
+```sql
+--  ./sql-client.sh embedded (standlone需要先启动集群./start-cluster.sh)
+--  yarn进入是./sql-client.sh embedded -s yarn-session这个命令
+-- ./yarn-session.sh -n 2 -s 2 -jm 1024 -tm 1024 -nm test -d
+Flink SQL> CREATE TABLE tbl (
+                  item STRING,
+                  price DOUBLE,
+                  proctime as PROCTIME()
+            ) WITH (
+                'connector' = 'socket',
+                'hostname' = 'node01',
+                'port' = '9999',
+                'format' = 'csv'
+           );
+ select * from tbl;
+ 
+Flink SQL> CREATE VIEW MyView3 AS
+            SELECT
+                TUMBLE_START(proctime, INTERVAL '10' MINUTE) AS window_start,
+                TUMBLE_END(proctime, INTERVAL '10' MINUTE) AS window_end,
+                TUMBLE_PROCTIME(proctime, INTERVAL '10' MINUTE) as window_proctime,
+                item,
+                MAX(price) as max_price
+            FROM tbl
+                GROUP BY TUMBLE(proctime, INTERVAL '10' MINUTE), item;
+
+Flink SQL> DESC MyView3;
++-----------------+-----------------------------+-------+-----+--------+-----------+
+|           name  |                        type |  null | key | extras | watermark |
++-----------------+-----------------------------+-------+-----+--------+-----------+
+|    window_start |                TIMESTAMP(3) | false |     |        |           |
+|      window_end |                TIMESTAMP(3) | false |     |        |           |
+| window_proctime | TIMESTAMP_LTZ(3) *PROCTIME* | false |     |        |           |
+|            item |                      STRING | true  |     |        |           |
+|       max_price |                      DOUBLE |  true |     |        |           |
++-----------------+-----------------------------+-------+-----+--------+-----------+
+-----------------------------------
+
+https://blog.51cto.com/u_15318160/4860992
+
+```
+
+
 
 ##### 更新模式
 
@@ -394,13 +563,17 @@ hadoop-code/bigDataSolve/FlinkTutorial/src/main/java/com/lh/apitest/tableapi/Tab
 
 ##### API调用
 
-建立环境 
+###### 建立环境 
 
-建表/临时表 | 流转表
+```java
+StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+EnvironmentSettings bsSettings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build();
+StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env, bsSettings);
+```
+
+###### 建表
 
 对表进行业务处理（如果使用TableAPI需先转为Table对象）
-
-输出（）
 
 ```java
 /* 
@@ -418,26 +591,45 @@ tableEnv.executeSql("CREATE TEMPORARY TABLE table1 ... WITH ( 'connector' = ... 
 // register an output Table
 tableEnv.executeSql("CREATE TEMPORARY TABLE outputTable ... WITH ( 'connector' = ... )");
 
+```
+
+
+
+###### 查询
+
+```java
+
 // create a Table object from a Table API query
 Table table2 = tableEnv.from("table1").select(...);
 // create a Table object from a SQL query
 Table table3 = tableEnv.sqlQuery("SELECT ... FROM table1 ... ");
+// 还可以
+Table table5 = tableEnv.sqlQuery("SELECT ... FROM " table2);
 
 // emit a Table API result Table to a TableSink, same for SQL result
 TableResult tableResult = table2.executeInsert("outputTable");
 tableResult...
 ```
 
+
+
 （**注意：tableEnv.from("table1")会返回table对象，要Table对象才能进行select等API查询， sql可直接**sqlQuery等操作）
 
 此外，建临时表还可以通过以下方式
 
 ```java
-// 1. 将流转化为表
-dataStream = env.readTextFile().map()
-Table sensorTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp");
-tableEnv.createTemporaryView("sensor", sensorTable);
-// 2 通过API建表
+// 1. 将流转化为表, 定义时间特性
+DataStream<SensorReading> dataStream = env.readTextFile().map()
+Table sensorTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp, pt.proctime");
+    /*
+     rt.rowtime：使用事件时间，需要先分配WM-assignTimestampsAndWatermarks
+     id，timestamp， temperature为SensorReading的名字 
+    */
+	
+// 2. 将流转化为视图
+tableEnv.createTemporaryView("sensor", dataStream);
+
+// 3 通过API建表
 tableEnv.connect( new FileSystem().path(filePath))
                 .withFormat( new Csv().fieldDelimiter(','))
                 .withSchema( new Schema()
@@ -447,9 +639,37 @@ tableEnv.connect( new FileSystem().path(filePath))
                 )
                 .createTemporaryTable("inputTable")
 
+// 4 表转为SQL操作的表
+tableEnv.createTemporaryView("exampleView", table2);
+
+// 5. 变量变为表  1.12
+Table table = tEnv.fromValues(
+   row(1, "ABC"),  
+   row(2L, "ABCDE")
+);
+/*
+    root
+     |-- f0: BIGINT NOT NULL
+     |-- f1: VARCHAR(5) NOT NULL
+ */
+
+Table table = tableEnv.fromValues(
+    DataTypes.ROW(
+        DataTypes.FIELD("id", DataTypes.DECIMAL(10, 2)),
+        DataTypes.FIELD("name", DataTypes.STRING())
+    ),
+    row(1, "ABC"),
+    row(2L, "ABCDE")
+);
+/*
+root
+|-- id: DECIMAL(10, 2)
+|-- name: STRING
+*/
+// https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/tableApi.html
 ```
 
-输出
+###### 输出
 
 ```java
 // 1. 将表转化为流 来 输出
@@ -462,4 +682,436 @@ provinceStatsDataStream.addSink(kafka);
 // 3. sql插入
 tableEnv.executeSql("insert into outputTable select * from table1");
 ```
+
+##### 时间属性
+
+- 输入
+
+  - 建表时 WM所需的TIMESTAMP
+  - 在Flink里，Timestamp被定义为**8字节的long值**。每个算子拿到数据时，默认以毫秒精度的Unix时间戳解析这个long值，也就是自1970-01-01 00:00:00.000以来的毫秒数。当然自定义的算子可以自己定义时间戳的解析方式。
+
+  ```java
+  // 1 从kafka读取
+  // 1.1 如果数据源的时间是时间戳 
+  tableEnv.sqlQuery("select id, 
+                    CURRENT_TIMESTAMP, 
+                    TO_TIMESTAMP(FROM_UNIXTIME(1547718199000 /1000,'yyyy-MM-dd HH:mm:ss')),
+                    FROM_UNIXTIME(1547718199000 /1000,'yyyy-MM-dd HH:mm:ss')  from tbl");
+  // sensor_1,2022-09-26T03:43:33.936,
+  // 2019-01-17T17:43:19,
+  // 2019-01-17 17:43:19
+  // FROM_UNIXTIME(1547718199000 /1000) 和 FROM_UNIXTIME(1547718199000 /1000,'yyyy-MM-dd HH:mm:ss') 作用一样
+  
+  
+  // 1.2 如果数据源的时间是字符串 create_time=“2022-11-10 18:58:29”
+  TO_TIMESTAMP(create_time)
+      
+  ```
+
+- 输出
+
+- ```java
+  // 1
+   UNIX_TIMESTAMP()*1000 ts // 返回：1668403007000L
+  //2 转为java的Bean
+      TUMBLE_START(rt, INTERVAL '10' SECOND) 是TIMESTAMP类型（2022-11-10T18:58:10），所以转为java的bean需要使用
+      DATE_FORMAT(TUMBLE_START(rt, INTERVAL '10' SECOND), 'yyyy-MM-dd HH:mm:ss') stt
+      再在java的bean中使用private String stt;
+  ```
+
+  
+
+
+
+
+
+- EventTime
+  
+  - 在DDL中定义
+
+```sql
+CREATE TABLE user_actions (
+  user_name STRING,
+  data STRING,
+  user_action_time TIMESTAMP(3),
+  -- declare user_action_time as event time attribute and use 5 seconds delayed watermark strategy
+  WATERMARK FOR user_action_time AS user_action_time - INTERVAL '5' SECOND
+) WITH (
+  ...
+);
+
+SELECT TUMBLE_START(user_action_time, INTERVAL '10' MINUTE), COUNT(DISTINCT user_name)
+FROM user_actions
+GROUP BY TUMBLE(user_action_time, INTERVAL '10' MINUTE);
+```
+
+- 	-	相关API
+
+```java
+// import org.apache.flink.table.expressions.Expression;
+DataStream<String> inputStream = env.readTextFile("sensor.txt");
+// 3. 转换成POJO
+DataStream<SensorReading> dataStream= inputStream.assignTimestampsAndWatermarks(...); // 乱序 2s
+
+// 4. 将流转换成表，定义时间特性
+// Table dataTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp, pt.proctime");
+Table dataTable = tableEnv.fromDataStream(dataStream, $("id"), $("timestamp").as("ts"), $("temperature").as("temp"), $("rt").rowtime());
+// Table dataTable = tableEnv.fromDataStream(dataStream,  $("id"), $("temperature"), $("rt").rowtime()); 
+/*
+    root
+     |-- id: STRING
+     |-- ts: BIGINT
+     |-- temp: DOUBLE
+     |-- rt: TIMESTAMP(3) *ROWTIME*
+*/
+
+tableEnv.createTemporaryView("sensor", dataTable);
+
+// 5. 窗口操作
+// 5.1 Group Window
+// table API
+Table resultTable = dataTable.window(Tumble.over("10.seconds").on("rt").as("tw"))
+    .groupBy("id, tw")
+    .select("id, id.count, temp.avg, tw.end");
+tableEnv.toAppendStream(resultTable, Row.class).print("resultTable");
+/*
+    resultTable> sensor_1,1,35.8,2019-01-17 09:43:20.0
+    resultTable> sensor_6,1,15.4,2019-01-17 09:43:30.0
+    resultTable> sensor_1,2,34.55,2019-01-17 09:43:30.0
+    resultTable> sensor_10,1,38.1,2019-01-17 09:43:30.0
+    resultTable> sensor_7,1,6.7,2019-01-17 09:43:30.0
+    resultTable> sensor_1,1,37.1,2019-01-17 09:43:40.0
+
+*/
+// SQL
+Table resultSqlTable = tableEnv.sqlQuery("select id, count(id) as cnt, avg(temp) as 					avgTemp, tumble_end(rt, interval '10' second) " +
+                "from sensor group by id, tumble(rt, interval '10' second)");
+
+// 5.2 Over Window
+// table API
+Table overResult = dataTable.window(Over.partitionBy("id").orderBy("rt").preceding("2.rows").as("ow"))
+    .select("id, rt, id.count over ow, temp.avg over ow");
+
+// SQL  开窗，事件时间排序，取前3个值做均值
+Table overSqlResult = tableEnv.sqlQuery("select id, rt, count(id) over ow, avg(temp) over ow from sensor  window ow as (partition by id order by rt rows between 2 preceding and current row)");
+
+tableEnv.toRetractStream(overSqlResult, Row.class).print("overSqlResult");
+/**
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:19,1,35.8)
+         * overSqlResult> (true,sensor_6,2019-01-17T09:43:21,1,15.4)
+         * overSqlResult> (true,sensor_7,2019-01-17T09:43:22,1,6.7)
+         * overSqlResult> (true,sensor_10,2019-01-17T09:43:25,1,38.1)
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:27,2,36.05)
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:29,3,34.96666666666666)
+         * overSqlResult> (true,sensor_1,2019-01-17T09:43:32,3,35.4)
+*/
+
+```
+
+- Proctime
+
+  - DDL中定义
+
+  ```sql
+  CREATE TABLE user_actions (
+    user_name STRING,
+    data STRING,
+    user_action_time TIMESTAMP(3),
+    -- declare user_action_time as event time attribute and use 5 seconds delayed watermark strategy
+    WATERMARK FOR user_action_time AS user_action_time - INTERVAL '5' SECOND
+  ) WITH (
+    ...
+  );
+  
+  SELECT TUMBLE_START(user_action_time, INTERVAL '10' MINUTE), COUNT(DISTINCT user_name)
+  FROM user_actions
+  GROUP BY TUMBLE(user_action_time, INTERVAL '10' MINUTE);
+  // GROUP BY HOP(rowtime, INTERVAL '1' HOUR, INTERVAL '1' DAY)
+// HOP(time_attr, sliding_interval, window_size_interval)
+  ```
+
+
+
+
+##### 映射
+
+###### toAppendStream映射到Bean对象
+
+```java
+        Table table = tableEnv.sqlQuery("select " +
+                        "province_id," +
+                    "province_name" +
+                    "from orderWide ");
+tableEnv.toAppendStream(table, ProvinceStats.class);
+// 这个table中的字段顺序可以和ProvinceStats不一致，但是数量需要一致
+```
+
+######  从kafka读取
+
+```java
+// 如果是json数据，可以从数据源选取读取几个字段（建表字段需要是数据源的字段），如果format是csv则必须全量字段读取（建表字段自己命名，本身数据源就没有字段名，只是以“，”分隔的数据）
+String ddl = "CREATE TABLE orderWide (" +
+    "`province_name` STRING," +
+    "`province_area_code` STRING," +
+    "`create_time` String," +
+    " `rt` as TO_TIMESTAMP(create_time), " +
+    " WATERMARK FOR rt AS rt - INTERVAL '1' SECOND " +
+    ") with (" +
+    "'connector' = 'kafka', " +
+    "'topic' = 'dwm_order_wide'," +
+    "'properties.bootstrap.servers' = 'node01:9092'," +
+    //                "'properties.group.id' = 'testGroup'," +
+    "'scan.startup.mode' = 'earliest-offset'," +
+    "'format' = 'json')";
+tableEnv.executeSql(ddl);
+```
+
+###### JSONObject映射bean
+
+```java
+public static void testJsonObject(){
+    Be be = JSON.parseObject("{'userId':'Atguigu', 'age':11, 'user_id':'tom','GENder':'female' }", Be.class);
+    System.out.println(be); // Be(user_id=Atguigu, age=11, gender=female)
+}
+```
+
+
+
+#### 数仓流程
+
+##### ODS
+
+######  1. 收集日志数据
+
+-  数据格式
+
+  ```java
+  # 页面数据
+      ## page数据（有些包含display数据）
+  {"common":{"ar":"440000","ba":"iPhone","ch":"Appstore","is_new":"0","md":"iPhone X","mid":"mid_6","os":"iOS 13.2.3","uid":"14","vc":"v2.1.134"},"displays":[{"display_type":"activity","item":"1","item_type":"activity_id","order":1,"pos_id":5},{"display_type":"query","item":"3","item_type":"sku_id","order":2,"pos_id":1},{"display_type":"recommend","item":"1","item_type":"sku_id","order":3,"pos_id":3},{"display_type":"recommend","item":"7","item_type":"sku_id","order":4,"pos_id":3},{"display_type":"query","item":"6","item_type":"sku_id","order":5,"pos_id":5},{"display_type":"query","item":"5","item_type":"sku_id","order":6,"pos_id":3},{"display_type":"recommend","item":"1","item_type":"sku_id","order":7,"pos_id":1},{"display_type":"promotion","item":"2","item_type":"sku_id","order":8,"pos_id":3},{"display_type":"promotion","item":"9","item_type":"sku_id","order":9,"pos_id":3},{"display_type":"query","item":"7","item_type":"sku_id","order":10,"pos_id":2}],"page":{"during_time":3730,"page_id":"home"},"ts":1668073354000}
+  #  start启动数据
+  {"common":{"ar":"420000","ba":"Huawei","ch":"oppo","is_new":"1","md":"Huawei Mate 30","mid":"mid_5","os":"Android 11.0","uid":"19","vc":"v2.1.132"},"start":{"entry":"notice","loading_time":8358,"open_ad_id":16,"open_ad_ms":5756,"open_ad_skip_ms":0},"ts":1668073351000}
+  
+  ```
+
+- 配置前端
+
+  - gmall2020-mock-log-2020-12-18.jar的application.yml
+
+    ```txt
+    mock.url: "http://node01:80/applog" # 发送至nginx，80可以省去
+    mock.url: "http://node01:8081/applog" # 如果不用ngxin，直接用8081发送到springboot
+    ```
+
+- 配置nginx
+
+  - nginx.cong
+
+    ```txt
+    upstream logcluster{
+                server node01:8081 weight=1;
+                server node02:8081 weight=1;
+                server node03:8081 weight=1;
+        }
+    listen       80;
+    ```
+
+- 配置springboot的gmall-logger.jar，输出到**ods_base_log**
+
+  - application.properties
+
+    ```
+    server.port=8081
+    ```
+
+###### 2. 手机业务数据
+
+  -  通过flinkCDC将数据库的数据同步至ods_base_db数据库，同时可以多次运行gmall2020-mock-db-2020-11-27.jar 生产业务数据并同步至**ods_base_db**
+
+      -   ```
+        ## user_info这个表是增量，其余的表是清空后加入
+        --------开始生成数据--------
+        --------开始生成用户数据--------
+        共有80名用户发生变更
+        共生成0名用户
+        --------开始生成收藏数据--------
+        共生成收藏100条
+        --------开始生成购物车数据--------
+        共生成购物车1705条
+        --------开始生成订单数据--------
+        共生成订单115条
+        --------开始生成支付数据--------
+        状态更新115个订单
+        共有78订单完成支付
+        --------开始生成退单数据--------
+        状态更新78个订单
+        共生成退款27条
+        共生成退款支付明细27条
+        --------开始生成评价数据--------
+        共生成评价114条
+        ```
+
+        
+
+##### DWD
+
+###### 日志数据分流
+
+- BaseLogApp，读取 ods_base_log数据
+  - 有“start”的同步至dwd_start_log
+  - 有page的同步至dwd_page_log
+  - 有display的同步至dwd_display_log
+
+###### 业务数据分流
+
+- 通过BaseDBApp同步至DWD中，并进行hbase和kafka的分流
+    - spu_info,sku_info等维度数据写入hbase
+    - order_info,order_detail,pay_info等事实数据写入kafka
+    - 注意 BaseDBApp从ods_base_db取数据要过滤掉type=delete的数据
+
+##### DWM
+
+###### 独立访客 - UniqueVisitApp
+
+  - 读取dwd_page_log
+
+  - 根据mid手机号进行keyby，过滤（filter）出last_page_id == null（说明第一次登录），且当天是第一次登录的数据（可用状态）
+
+      - 核心代码
+
+          - ```java
+            open{
+                StateTtlConfig build = StateTtlConfig.newBuilder(Time.hours(24)).build();// 24小时过期
+                valueStateDescriptor.enableTimeToLive(build);
+                dataState = getRuntimeContext().getState(valueStateDescriptor);   
+            }
+            public boolean filter(JSONObject value) throws Exception {
+                String last_page_id = value.getJSONObject("page").getString("last_page_id");
+                String lastDate = dataState.value();
+                String curDate = sdf.format(value.getLong("ts"));
+                if (last_page_id == null || last_page_id.length() <= 0) {
+                    if (!curDate.equals(lastDate)) {
+                        dataState.update(curDate);
+                        return true;
+                    }
+                }
+                return false;
+            }
+            ```
+
+- 输出数据就是原始的dwd_page_log数据
+
+###### 用户跳出
+
+ - 读取dwd_page_log
+
+ - 根据midkey，通过cep匹配出用户首次登录app后last_page_id=null，且中途没有登录别的页面，那么下一条数据也为null的模式。等待时间10s
+
+    - 核心代码
+
+       - ```java
+         Pattern<JSONObject, JSONObject> userJumpPattern = Pattern.<JSONObject>begin("start").where(new SimpleCondition<JSONObject>() {
+         @Override
+         public boolean filter(JSONObject value) throws Exception {
+         String last_page_id = value.getJSONObject("page").getString("last_page_id");
+         return last_page_id == null || last_page_id.length() <= 0;
+         }
+         }).times(2).consecutive().within(Time.seconds(10)); // 10s后为超时
+         PatternStream<JSONObject> patternDS = CEP.pattern(dsAddWm.keyBy(json -> json.getJSONObject("common").getString("mid")), userJumpPattern);
+         patternDS.select()...
+         
+         ```
+
+- 最后合并超时数据和正常数据输出到dwm_user_jump_detail，输出数据就是原始的dwd_page_log数据
+
+###### 订单宽表
+
+- 读取dwd_order_info，dwd_order_detail，intervalJoin两个流形成wideDS合并流
+
+- 关联用户，地区，SPU等维度
+
+  - 通过AsyncDataStream.unorderedWait(wideDS, AsyncFunction, tieout=60, seconds)进行异步匹配数据
+
+    - AsyncFunction中主要作用asyncInvoke方法，异步调用方法
+
+      - ```java
+        public void asyncInvoke(T input, ResultFuture<T> resultFuture) throws Exception {
+        
+            threadPoolExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    //获取查询的主键
+                    String id = getKey(input);
+                    //查询维度信息(可先查redis再查hbase当作二级查找)
+                    JSONObject dimInfo = DimUtil.getDimInfo(conn, tableName, id);
+                   //补充维度信息
+                    join(input, dimInfo);
+                    //将数据输出
+                    resultFuture.complete(Collections.singletonList(input));
+        
+        });
+        ```
+      
+      - redis的key是 "DIM:DIM_SKU_INFO:29" 可解释为 ”DIM:table_process的sink_table表名:hbase中维度表的字段“， 1301是存储在hbase的id，维度表都有一个唯一的id对应事实表。比如"sku_info"表的字段有【id,spu_id,price,sku_name,sku_desc】，order_detail的字段的sku_id字段就是对应sku_info表的id字段
+
+- 输出到kafka的dwm_order_wide
+
+  - ```
+    {"activity_reduce_amount":0.00,"category3_id":473,"category3_name":"香水","coupon_reduce_amount":0.00,"create_date":"2022-11-10","create_hour":"18","create_time":"2022-11-10 18:58:29","detail_id":80654,"feight_fee":12.00,"order_id":26973,"order_price":300.00,"order_status":"1001","original_total_amount":1299.00,"province_3166_2_code":"CN-HE","province_area_code":"130000","province_id":5,"province_iso_code":"CN-13","province_name":"河北","sku_id":32,"sku_name":"香奈儿（Chanel）女士香水5号香水 粉邂逅柔情淡香水EDT 5号淡香水35ml","sku_num":1,"split_total_amount":300.00,"spu_id":11,"spu_name":"香奈儿（Chanel）女士香水5号香水 粉邂逅柔情淡香水EDT ","tm_id":11,"tm_name":"香奈儿","total_amount":1311.00,"user_age":34,"user_gender":"F","user_id":3871}
+    ```
+
+  - 
+
+##### DWS
+
+###### 访客主题宽表 - dwm_order_wide
+
+目的根据维度“渠道、地区、版本、新老用户" 进行聚合，算出度量PV、 UV、跳出次数、进入页面数(session_count)、连续访问时长  
+
+过程
+
+- 读取dwm_unique_visit，dwm_user_jump_detail，dwd_page_log，并转换为Bean为VisitorStats的数据
+- 合并3个流 
+
+- 以渠道、地区、版本、新老用户进行keyBy，10s一个窗口，对窗口内的各项指标累加，输出数据如下，最后输出到clickhouse
+
+```python
+VisitorStats(stt=2022-11-10 17:49:40, edt=2022-11-10 17:49:50, vc=v2.1.111, ch=xiaomi, ar=110000, is_new=0, uv_ct=0, pv_ct=0, sv_ct=0, uj_ct=1, dur_sum=0, ts=1668073783000)
+```
+
+###### 商品主题宽表
+
+与访客的 dws 层的宽表类似，也是把多个事实表的明细数据汇总起来组合成宽表。输出数据如下
+
+过程
+
+- 读取dwd_page_log，dwm_order_wide，dwm_payment_wide，dwd_cart_info，dwd_favor_info，dwd_order_refund_info，dwd_comment_info，并转化为ProductStats数据
+- 合并7个流
+- 以Sku_id做keyby，10s一个窗口，对窗口内的各项指标累加，输出数据如下
+
+```python
+ProductStats(stt=2022-11-10 18:58:10, edt=2022-11-10 18:58:20, sku_id=23, sku_name=十月稻田 辽河长粒香 东北大米 5kg, sku_price=40, spu_id=7, spu_name=十月稻田 长粒香大米 东北大米 东北香米 5kg, tm_id=6, tm_name=长粒香, category3_id=803, category3_name=米面杂粮, display_ct=0, click_ct=0, favor_ct=0, cart_ct=0, order_sku_num=0, order_amount=0, order_ct=0, payment_amount=0, paid_order_ct=0, refund_order_ct=0, refund_amount=0, comment_ct=3, good_comment_ct=1, orderIdSet=[], paidOrderIdSet=[], refundOrderIdSet=[], ts=1668077894000)
+```
+
+- 关联维度表，从redis先取再从hbase取，加上“SPU_NAME”，“TM_NAME”等字段信息，并输出到clickhouse
+
+  
+
+###### 地区主题宽表
+
+过程
+
+- 读取dwm_order_wide订单宽表
+- 以地区和时间窗口分组，count(distinct order_id) order_count,sum(split_total_amount) order_amount统计出订单数量和金额
+
+
+
+###### 关键词主题
+
+过程
+
+- 读取dwd_page_log 页面数据
+- 过滤出last_page_id!=nuil && item!=null (item=小米，可乐等)的记录
+- 对记录里的item使用IKSegmenter切分出各个关键词
+- 对关键词和窗口分组，统计出窗口下关键词的数量
 
