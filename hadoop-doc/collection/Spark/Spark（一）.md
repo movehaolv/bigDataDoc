@@ -75,13 +75,10 @@ DAGScheduler 根据 RDD 的血缘关系构成的 DAG 进行切分，将一个Job
 &emsp; 具体的task运行在那他机器上，dag划分stage的时候确定的  
 
 ### 7、RDD的弹性表现在哪几点？（☆☆☆☆☆）  
-&emsp; 1）自动的进行内存和磁盘的存储切换； 
-&emsp; 2）基于Lineage的高效容错；  
-&emsp; 3）task如果失败会自动进行特定次数的重试；  
-&emsp; 4）stage如果失败会自动进行特定次数的重试，而且只会计算失败的分片；   
-&emsp; 5）checkpoint和persist，数据计算之后持久化缓存；  
-&emsp; 6）数据调度弹性，DAG TASK调度和资源无关；  
-&emsp; 7）数据分片的高度弹性。  
+ 	存储的弹性：内存与磁盘的自动切换；
+	 容错的弹性：数据丢失可以自动恢复；【上图比如第二个分区(3,4)数据丢失，不用担心，因为知道来自第二个分区可以重新来读取】
+	 计算的弹性：计算出错重试机制；【计算出现错误可以重头开始计算，没必要因为一个executor出现错误而导致整个job失败】
+	 分片的弹性：可根据需要重新分片。【这里的分片就是分区，类似kafka的分区】  
 
 ### 8、RDD有哪些缺陷？（☆☆☆☆☆）  
 &emsp; 1）不支持细粒度的写和更新操作（如网络爬虫），spark写数据是粗粒度的。所谓粗粒度，就是批量写入数据，为了提高效率。但是读数据是细粒度的也就是说可以一条条的读。  
@@ -146,9 +143,8 @@ DAGScheduler 根据 RDD 的血缘关系构成的 DAG 进行切分，将一个Job
 总结：yarn的container和spark的executor基本上是等价的，一个container对应一个JVM进程（也就是一个executor） lh
 ```
 
+### 16、Spark使用parquet文件存储格式能带来哪些好处？（☆☆☆☆☆）  
 
-
-## 16、Spark使用parquet文件存储格式能带来哪些好处？（☆☆☆☆☆）  
 &emsp; 1）如果说HDFS是大数据时代分布式文件系统首选标准，那么parquet则是整个大数据时代文件存储格式实时首选标准。  
 &emsp; 2）速度更快：从使用spark sql操作普通文件CSV和parquet文件速度对比上看，绝大多数情况会比使用csv等普通文件速度提升10倍左右，在一些普通文件系统无法在spark上成功运行的情况下，使用parquet很多时候可以成功运行。  
 &emsp; 3）parquet的压缩技术非常稳定出色，在spark sql中对压缩技术的处理可能无法正常的完成工作（例如会导致lost task，lost executor）但是此时如果使用parquet就可以正常的完成。  
@@ -164,7 +160,7 @@ DAGScheduler 根据 RDD 的血缘关系构成的 DAG 进行切分，将一个Job
 ### 18、Spark应用程序的执行过程是什么？（☆☆☆☆☆）  
 &emsp; 1）构建Spark Application的运行环境（启动SparkContext），SparkContext向资源管理器（可以是Standalone、Mesos或YARN）注册并申请运行Executor资源；  
 &emsp; 2）资源管理器分配Executor资源并启动StandaloneExecutorBackend，Executor运行情况将随着心跳发送到资源管理器上；  
-&emsp; 3）SparkContext构建成DAG图，将DAG图分解成Stage，并把Taskset发送给Task Scheduler。Executor向SparkContext申请Task，Task Scheduler将Task发放给Executor运行同时SparkContext将应用程序代码发放给Executor；  
+&emsp; 3）SparkContext构建成DAG图，DAGScheduler 将DAG图分解成Stage，并把Taskset发送给Task Scheduler。Executor向SparkContext申请Task，Task Scheduler将Task发放给Executor运行同时SparkContext将应用程序代码发放给Executor；  
 &emsp; 4）Task在Executor上运行，运行完毕释放所有资源。  
 
 ### 19、不需要排序的hash shuffle是否一定比需要排序的sort shuffle速度快？（☆☆☆☆☆）  

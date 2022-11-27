@@ -53,7 +53,7 @@
 &emsp; 将所有的对象合并为一个对象，文件中的所有行数据仅返回一个数组对象，会抛弃值为null的值。  
 
 ```scala
-val rdd = sc.makeRDD(List("hello","hello", "world")).map((_,1));
+val rdd: RDD[(String, Int)] = sc.makeRDD(List("hello","hello", "world")).map((_,1));
 rdd.flatMap{case(x, y)=>{
     Array(Array(x))  
 }}.collect().foreach(println); // [Ljava.lang.String;@47b179d7
