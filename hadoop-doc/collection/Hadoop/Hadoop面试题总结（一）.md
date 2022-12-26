@@ -7,7 +7,7 @@
 &emsp; 单机版、伪分布式模式、完全分布式模式  
 
 ### 3、Hadoop生态圈的组件并做简要描述  
-&emsp; 1）Zookeeper：是一个开源的分布式应用程序协调服务,基于zookeeper可以实现同步服务，配置维护，命名服务。  
+&emsp; 1）Zookeeper：是一个开源的分布式应用程序协调服务,基于zookeeper可以实现**同步服务，配置维护，命名服务。**  
 &emsp; 2）Flume：一个高可用的，高可靠的，分布式的海量日志采集、聚合和传输的系统。   
 &emsp; 3）Hbase：是一个分布式的、面向列的开源数据库, 利用Hadoop HDFS作为其存储系统。   
 &emsp; 4）Hive：基于Hadoop的一个数据仓库工具，可以将结构化的数据档映射为一张数据库表，并提供简单的sql 查询功能，可以将sql语句转换为MapReduce任务进行运行。   
@@ -24,3 +24,8 @@
 &emsp; 5）NodeManager：（TaskTracker）执行任务。  
 &emsp; 6）DFSZKFailoverController：高可用时它负责监控NN的状态，并及时的把状态信息写入ZK。它通过一个独立线程周期性的调用NN上的一个特定接口来获取NN的健康状态。FC也有选择谁作为Active NN的权利，因为最多只有两个节点，目前选择策略还比较简单（先到先得，轮换）。  
 &emsp; 7）JournalNode：高可用情况下存放namenode的editlog文件。  
+
+- 
+
+  
+

@@ -37,7 +37,7 @@ public class TableTest5_TimeAndWindow {
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
         // 2. 读入文件数据，得到DataStream
-        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
+        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\resources\\sensor.txt");
 
         // 3. 转换成POJO
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
@@ -56,6 +56,9 @@ public class TableTest5_TimeAndWindow {
         Table dataTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp, rt.rowtime");
 
         tableEnv.createTemporaryView("sensor", dataTable);
+
+//        Table sqlQuery = tableEnv.sqlQuery("select * from sensor");
+//        tableEnv.toAppendStream(sqlQuery, Row.class).print(">>>>>>>>>>>>>>>>>>>>>");
 
         // 5. 窗口操作
         // 5.1 Group Window
@@ -79,10 +82,10 @@ public class TableTest5_TimeAndWindow {
                 " window ow as (partition by id order by rt rows between 2 preceding and current row)");
 
 //        dataTable.printSchema();
-//        tableEnv.toAppendStream(resultTable, Row.class).print("result");
-//        tableEnv.toRetractStream(resultSqlTable, Row.class).print("sql");
-        tableEnv.toAppendStream(overResult, Row.class).print("result");
-        tableEnv.toRetractStream(overSqlResult, Row.class).print("sql");
+//        tableEnv.toAppendStream(resultTable, Row.class).print("resultTable");
+        tableEnv.toRetractStream(resultSqlTable, Row.class).print("resultSqlTable");
+//        tableEnv.toAppendStream(overResult, Row.class).print("result");
+//        tableEnv.toRetractStream(overSqlResult, Row.class).print("overSqlResult");
         /**
          * overSqlResult> (true,sensor_1,2019-01-17T09:43:19,1,35.8)
          * overSqlResult> (true,sensor_6,2019-01-17T09:43:21,1,15.4)

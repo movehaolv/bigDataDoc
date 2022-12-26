@@ -118,8 +118,95 @@ https://blog.csdn.net/justlpf/article/details/114696129?utm_medium=distribute.pc
 
 ### 17、cache和pesist的区别？  
 &emsp; cache和persist都是用于将一个RDD进行缓存的，这样在之后使用的过程中就不需要重新计算了，可以大大节省程序运行时间  
-&emsp; 1） cache只有一个默认的缓存级别MEMORY_ONLY ，cache调用了persist，而persist可以根据情况设置其它的缓存级别；  
-&emsp; 2）executor执行的时候，默认60%做cache，40%做task操作，persist是最根本的函数，最底层的函数。  
+&emsp; 1） cache只有一个默认的缓存级别MEMORY_ONLY ，cache调用了persist，而persist可以根据情况设置其它的缓存级别，可以存储磁盘；  
+&emsp; 2）executor执行的时候，默认60%做cache，40%做task操作，persist是最根本的函数，最底层的函数。
+
+​    3）  可在resultStage的最后一个阶段 和 shuffleMapTask的最后一个阶段实行缓存(Spark 会自动对一些 Shuffle 操作的中间数据做持久化操作(比如：reduceByKey) )。 **cache可以接其他算子，但是接了算子之后，起不到缓存应有的效果，因为会重新触发cache。**
+
+- cache的作用
+
+  - 不加cache
+
+    ```scala
+    val rdd: RDD[String] = sc.textFile("Spark01_WordCount.txt") // textFile有hadoopRDD和MapPartitionsRDD
+    
+    val rdd1: RDD[(String, Int)] = rdd.map((_, 1))
+    val rdd2: RDD[(String, Int)] = rdd.map((_, 2))
+    
+    rdd1.collect() // 遇到行动算子就会对同一个rdd计算多次
+    rdd2.collect()
+    
+    println(rdd1.toDebugString)
+    println(rdd2.toDebugString)
+    
+    /*
+    (1) MapPartitionsRDD[2] at map at Test.scala:15 []
+     |  D:Spark01_WordCount.txt MapPartitionsRDD[1] at textFile at Test.scala:12 []
+     |  D:Spark01_WordCount.txt HadoopRDD[0] at textFile at Test.scala:12 []
+    (1) MapPartitionsRDD[3] at map at Test.scala:16 []
+     |  D:Spark01_WordCount.txt MapPartitionsRDD[1] at textFile at Test.scala:12 []
+     |  D:Spark01_WordCount.txt HadoopRDD[0] at textFile at Test.scala:12 []
+    */
+    
+    ```
+
+  - 复用算子加cache
+
+    ```scala
+  // 使用cache , cache不会切断血缘关系，但会缩短运行时间
+    val rddCache: rdd.type = rdd.cache()
+    
+    val rdd1: RDD[(String, Int)] = rddCache.map((_, 1))
+    val rdd2: RDD[(String, Int)] = rddCache.map((_, 2))
+    
+    rdd1.collect()
+    rdd2.collect()
+    
+    
+    ```
+  
+    (1) **MapPartitionsRDD[2]** at map at Test.scala:17 []
+     |  D:Spark01_WordCount.txt MapPartitionsRDD[1] at textFile at Test.scala:12 []
+     |      CachedPartitions: 1; MemorySize: 5.1 KiB; ExternalBlockStoreSize: 0.0 B; DiskSize: 0.0 B
+     |  D:Spark01_WordCount.txt HadoopRDD[0] at textFile at Test.scala:12 []
+    (1) **MapPartitionsRDD[3]** at map at Test.scala:18 []
+     |  D:Spark01_WordCount.txt MapPartitionsRDD[1] at textFile at Test.scala:12 []
+     |      CachedPartitions: 1; MemorySize: 5.1 KiB; ExternalBlockStoreSize: 0.0 B; DiskSize: 0.0 B
+     |  D:Spark01_WordCount.txt HadoopRDD[0] at textFile at Test.scala:12 []
+  
+-  使用checkpoint(**遇到行动算子触发**)
+  
+  ```scala
+    sc.setCheckpointDir("D:\\tmp\\test")
+    
+    val rdd: RDD[String] = sc.textFile("Spark01_WordCount.txt")
+    // // 建议对checkpoint()的RDD 使用Cache 缓存，这样 checkpoint 的 job 只需从 Cache 缓存中读取数据即可，否则需要再从头计算一次RDD。
+    val rddCache: rdd.type = rdd.cache()
+    rddCache.checkpoint()
+    
+    val rdd1: RDD[(String, Int)] = rddCache.map((_, 1))
+    val rdd2: RDD[(String, Int)] = rddCache.map((_, 2))
+    
+    rdd1.collect()
+    rdd2.collect()
+    
+    println(rdd1.toDebugString)
+    println(rdd2.toDebugString)
+    
+    /*
+    (1) MapPartitionsRDD[2] at map at Test.scala:20 []
+     |  D:Spark01_WordCount.txt MapPartitionsRDD[1] at textFile at Test.scala:14 []
+     |      CachedPartitions: 1; MemorySize: 5.1 KiB; ExternalBlockStoreSize: 0.0 B; DiskSize: 0.0 B
+     |  ReliableCheckpointRDD[4] at collect at Test.scala:23 []
+    (1) MapPartitionsRDD[3] at map at Test.scala:21 []
+     |  D:Spark01_WordCount.txt MapPartitionsRDD[1] at textFile at Test.scala:14 []
+     |      CachedPartitions: 1; MemorySize: 5.1 KiB; ExternalBlockStoreSize: 0.0 B; DiskSize: 0.0 B
+     |  ReliableCheckpointRDD[4] at collect at Test.scala:23 [] (数据源改变)
+     */
+    ```
+    
+
+<font color='red'>checkpoint之前也是调用pesist，会永久存储磁盘，并且斩断血缘。pesist存储磁盘当程序结束存储的也会被清理</font>
 
 ### 18、 cache后面能不能接其他算子,它是不是action操作？  
 &emsp; cache可以接其他算子，但是接了算子之后，起不到缓存应有的效果，因为会重新触发cache。  

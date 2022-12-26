@@ -2,6 +2,9 @@ package com.lh.graph;
 
 import com.lh.linear.Stack;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 public class DepthFirstOrder {
     //索引代表顶点，值表示当前顶点是否已经被搜索
     private boolean[] marked;
@@ -22,7 +25,7 @@ public class DepthFirstOrder {
             }
         }
     }
-
+    Deque<Integer> stack = new ArrayDeque<>();
     //基于深度优先搜索，把顶点排序
     private void dfs(Digraph G, int v){
         //标记当前v已经被搜索

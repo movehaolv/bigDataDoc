@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <property name="LOG_HOME" value="/opt/module/gmall-flink/rt_applog/logs" />
+    <property name="LOG_HOME" value="D:\workLv\learn\proj\hadoop-code\gmall\gmall-logger\src\main\java\com\lh\logs" />
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%msg%n</pattern>

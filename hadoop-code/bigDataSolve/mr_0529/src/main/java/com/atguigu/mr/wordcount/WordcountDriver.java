@@ -47,7 +47,7 @@ public class WordcountDriver {
 		// 5 设置最终数据输出的key和value类型
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
-		job.setNumReduceTasks(2);
+//		job.setNumReduceTasks(2);
 
 //		 如果不设置InputFormat，它默认用的是TextInputFormat.class
 //		 job.setInputFormatClass(CombineTextInputFormat.class);

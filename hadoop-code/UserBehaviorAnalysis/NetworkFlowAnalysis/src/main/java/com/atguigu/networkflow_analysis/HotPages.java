@@ -179,7 +179,7 @@ public class HotPages {
         @Override
         public void open(Configuration parameters) throws Exception {
 //            pageViewCountListState = getRuntimeContext().getListState(new ListStateDescriptor<PageViewCount>("page-count-list", PageViewCount.class));
-            pageViewCountMapState = getRuntimeContext().getMapState(new MapStateDescriptor<String, Long>("page-count-map", String.class, Long.class));
+            pageViewCountMapState = getRuntimeContext().getMapState(new CoProcessFunction<String, Long>("page-count-map", String.class, Long.class));
         }
 
         @Override

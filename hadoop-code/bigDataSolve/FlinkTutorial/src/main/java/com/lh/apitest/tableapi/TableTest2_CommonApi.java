@@ -8,6 +8,7 @@ package com.lh.apitest.tableapi;/**
  * Created by wushengran on 2020/11/13 10:29
  */
 
+import com.lh.apitest.beans.SensorReading;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.operators.DataSource;
@@ -53,6 +54,7 @@ public class TableTest2_CommonApi {
         ExecutionEnvironment batchEnv = ExecutionEnvironment.getExecutionEnvironment();
         BatchTableEnvironment oldBatchTableEnv = BatchTableEnvironment.create(batchEnv);
 
+
         // 1.3 基于Blink的流处理
         EnvironmentSettings blinkStreamSettings = EnvironmentSettings.newInstance()
                 .useBlinkPlanner()
@@ -60,13 +62,13 @@ public class TableTest2_CommonApi {
                 .build();
         StreamTableEnvironment blinkStreamTableEnv = StreamTableEnvironment.create(env, blinkStreamSettings);
         // or TableEnvironment bsTableEnv = TableEnvironment.create(blinkStreamSettings);
+
 //         1.4 基于Blink的批处理
         EnvironmentSettings blinkBatchSettings = EnvironmentSettings.newInstance()
                 .useBlinkPlanner()
                 .inBatchMode()
                 .build();
         TableEnvironment blinkBatchTableEnv = TableEnvironment.create(blinkBatchSettings);
-
 
         // 2. 表的创建：连接外部系统，读取数据
         // 2.1 读取文件
@@ -77,7 +79,7 @@ public class TableTest2_CommonApi {
         tableEnv.connect( new FileSystem().path(filePath))
                 .withFormat( new Csv())
                 .withSchema( new Schema()
-                .field("id", DataTypes.STRING())
+                        .field("id", DataTypes.STRING())
                         .field("timestamp", DataTypes.BIGINT())
                         .field("temp", DataTypes.DOUBLE())
                 )
@@ -105,13 +107,12 @@ public class TableTest2_CommonApi {
 
         // 打印输出
         /*
-        * toRetractStream 接收新数据会修改之前状态，之前的true改为false。一般用于聚合操作，但是
-        * 结合TableTest5_TimeAndWindow.java 即使用了聚合操作group by也可以用toAppendStream，
-        * 因为用到了window，接收的新数据都在window内聚合，只是改变了窗口内部的聚合状态，没有改变查询的
-        * 结果动态表状态
-        *
+         * toRetractStream 接收新数据会修改之前状态，之前的true改为false。一般用于聚合操作，但是
+         * 结合TableTest5_TimeAndWindow.java 即使用了聚合操作group by也可以用toAppendStream，
+         * 因为用到了window，接收的新数据都在window内聚合，只是改变了窗口内部的聚合状态，没有改变查询的
+         * 结果动态表状态
+         *
          */
-
 
 //        tableEnv.toAppendStream(resultTable, Row.class).print("result");
         tableEnv.toAppendStream(sqlQuery, Row.class).print("sqlQuery");
@@ -119,6 +120,8 @@ public class TableTest2_CommonApi {
 //        tableEnv.toRetractStream(sqlAggTable, Row.class).print("sqlagg");
 
         env.execute();
+
+
     }
 }
 

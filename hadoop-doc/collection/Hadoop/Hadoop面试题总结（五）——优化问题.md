@@ -9,7 +9,7 @@ Mapreduce 程序效率的瓶颈在于两点：
 &emsp; （2）map和reduce数设置不合理  
 &emsp; （3）reduce等待过久  
 &emsp; （4）小文件过多   
-&emsp; （5）大量的不可分块的超大文件   
+&emsp; （5）大量的不可分块的超大文件  (gzip不可切分，设置block的大小>=gzip文件，否则造成丢失局部数据的可能性) 
 &emsp; （6）spill次数过多  
 &emsp; （7）merge次数过多等  
 
@@ -18,12 +18,12 @@ Mapreduce 程序效率的瓶颈在于两点：
 &emsp; （1）合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致mr运行较慢。   
 &emsp; （2）采用ConbinFileInputFormat来作为输入，解决输入端大量小文件场景。  
 2）map阶段  
-&emsp; （1）减少spill次数：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill次数，从而减少磁盘 IO。   
-&emsp; （2）减少merge次数：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。    
+&emsp; （1）减少spill次数：通过调整io.sort.mb及sort.spill.percent参数值，**增大触发spill的内存上限**，减少spill次数，从而减少磁盘 IO。   
+&emsp; （2）减少merge次数：通过调整io.sort.factor参数，**增大merge的文件数目**，减少merge的次数，从而缩短mr处理时间。    
 &emsp; （3）在 map 之后先进行combine处理，减少I/O。  
 3）reduce阶段  
 &emsp; （1）合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、reduce任务间竞争资源，造成处理超时等错误。   
-&emsp; （2）设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少reduce的等待时间。  
+&emsp; （2）设**置map、reduce共存**：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少reduce的等待时间。  
 &emsp; （3）规避使用reduce，因为Reduce在用于连接数据集的时候将会产生大量的网络消耗。  
 &emsp; （4）合理设置reduce端的buffer，默认情况下，数据达到一个阈值的时候，buffer中的数据就会写入磁盘，然后reduce会从磁盘中获得所有的数据。也就是说，buffer和reduce是没有直接关联的，中间多个一个写磁盘->读磁盘的过程，既然有这个弊端，那么就可以通过参数来配置，使得buffer中的一部分数据可以直接输送到reduce，从而减少IO开销：mapred.job.reduce.input.buffer.percent，默认为0.0。当值大于0的时候，会保留指定比例的内存读buffer中的数据直接拿给reduce使用。这样一来，设置buffer需要内存，读取数据需要内存，reduce计算也要内存，所以要根据作业的运行情况进行调整。  
 4）IO传输  
@@ -35,6 +35,7 @@ Mapreduce 程序效率的瓶颈在于两点：
 &emsp; &emsp; 数据大小倾斜——部分记录的大小远远大于平均值。  
 &emsp; （2）如何收集倾斜数据  
 &emsp; &emsp; 在reduce方法中加入记录map输出键的详细情况的功能。
+
 ```java
 public static final String MAX_VALUES = "skew.maxvalues";
 private int maxValueThreshold;
@@ -64,7 +65,48 @@ public void reduce(Text key, Iterator<Text> values,
 &emsp; &emsp; 方法2：自定义分区   
 &emsp; &emsp; &emsp; 另一个抽样和范围分区的替代方案是基于输出键的背景知识进行自定义分区。例如，如果map输出键的单词来源于一本书。其中大部分必然是省略词（stopword）。那么就可以将自定义分区将这部分省略词发送给固定的一部分reduce实例。而将其他的都发送给剩余的reduce实例。  
 &emsp; &emsp; 方法3：Combine  
-&emsp; &emsp; &emsp; 使用Combine可以大量地减小数据频率倾斜和数据大小倾斜。在可能的情况下，combine的目的就是聚合并精简数据。  
+&emsp; &emsp; &emsp; 使用Combine可以大量地减小数据频率倾斜和数据大小倾斜。在可能的情况下，combine的目的就是聚合并精简数据。 
+
+### MapReduce如何设置map的数量和大小
+
+- map数目的计算方法
+
+  > ​	hadoop提供了一个设置map个数的参数mapred.map.tasks，我们可以通过这个参数来控制map的个数。但是通过这种方式设置map的个数，并不是每次都有效的。原因是mapred.map.tasks只是一个hadoop的参考数值，最终map的个数，还取决于其他的因素。
+
+为了方便介绍，先来看几个名词：
+
+`block_size : hdfs的文件块大小，可以通过参数dfs.block.size设置`
+`total_size : 输入文件整体的大小`
+`input_file_num : 输入文件的个数`
+
+上述参数都在Hadoop的conf文件中设置了，使用时可以在自己写的脚本上更改这些参数。
+
+（1）默认map个数
+如果不进行任何设置，默认的map个数是和blcok_size相关的。
+
+`default_num = total_size / block_size;`
+
+（2）期望大小
+可以通过参数mapred.map.tasks来设置程序员期望的map个数，但是这个个数只有在大于default_num的时候，才会生效。
+
+`goal_num = mapred.map.tasks;`
+
+（3）设置处理的文件大小
+可以通过mapred.min.split.size 设置每个task处理的文件大小，但是这个大小只有在大于block_size的时候才会生效。
+
+`split_size = max(mapred.min.split.size, block_size);`
+`split_num = total_size / split_size;`
+
+（4）计算的map个数
+
+`compute_map_num = min(split_num, max(default_num, goal_num))`
+
+除了这些配置以外，mapreduce还要遵循一些原则。 mapreduce的每一个map处理的数据是不能跨越文件的，也就是说max_map_num <= input_file_num。 所以，最终的map个数应该为：
+`final_map_num = min(compute_map_num, input_file_num)`
+经过以上的分析，在设置map个数的时候，可以简单的总结为以下几点：
+**（1）如果想增加map个数，则设置mapred.map.tasks 为一个较大的值。**
+**（2）如果想减小map个数，则设置mapred.min.split.size 为一个较大的值。**
+**（3）如果输入中有很多小文件，依然想减少map个数，则需要将小文件merger为大文件，然后使用**
 
 ### 3、HDFS小文件优化方法（☆☆☆☆☆）  
 1）HDFS小文件弊端：  

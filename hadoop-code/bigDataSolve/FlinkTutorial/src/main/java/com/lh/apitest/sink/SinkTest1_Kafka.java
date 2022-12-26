@@ -29,7 +29,7 @@ public class SinkTest1_Kafka {
         env.setParallelism(1);
 
 //        // 从文件读取数据
-//        DataStream<String> inputStream = env.readTextFile("D:\\Projects\\BigData\\FlinkTutorial\\src\\main\\resources\\sensor.txt");
+        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\resources\\sensor.txt");
 
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "node01:9092");
@@ -39,15 +39,15 @@ public class SinkTest1_Kafka {
         properties.setProperty("auto.offset.reset", "latest");
 
         // 从文件读取数据
-        DataStream<String> inputStream = env.addSource( new FlinkKafkaConsumer011<String>("sensor", new SimpleStringSchema(), properties));
-        inputStream.print();
+//        DataStream<String> inputStream = env.addSource( new FlinkKafkaConsumer011<String>("sensor", new SimpleStringSchema(), properties));
+//        inputStream.print();
         // 转换成SensorReading类型
         DataStream<String> dataStream = inputStream.map(line -> {
             String[] fields = line.split(",");
             return new SensorReading(fields[0], new Long(fields[1]), new Double(fields[2])).toString();
         });
 
-        dataStream.addSink( new FlinkKafkaProducer011<String>("node01:9092", "sinktest", new SimpleStringSchema()));
+        dataStream.addSink( new FlinkKafkaProducer011<String>("node01:9092", "sensor", new SimpleStringSchema()));
 
         env.execute();
     }

@@ -7,6 +7,7 @@ import com.lh.utils.MyKafkaUtil;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -27,7 +28,8 @@ public class BaseLogApp {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        DataStreamSource<String> inputDS = env.addSource(MyKafkaUtil.getConsumer("ods_base_log", "gmall2021_ods_base_log"));
+        DataStreamSource<String> inputDS = env.addSource(MyKafkaUtil.getConsumer("ods_base_log",
+                "gmall2021_ods_base_log"));
 //        inputDS.print("input++++++++++++++++++++++++++++");
 
         OutputTag<String> dirty = new OutputTag<String>("dirty"){};
@@ -44,17 +46,18 @@ public class BaseLogApp {
             }
         });
 
-//        str2Json.print();
+        str2Json.print("new>>>");
         str2Json.getSideOutput(dirty).print("dirty>>>");
 
-
-        OutputTag<JSONObject>  startTag = new OutputTag<JSONObject>("start"){};
-        OutputTag<JSONObject>  displayTag = new OutputTag<JSONObject>("display"){};
+        OutputTag<String>  startTag = new OutputTag<String>("start"){};
+        OutputTag<String>  displayTag = new OutputTag<String>("display"){};
 
         // 确定是否新用户
-        SingleOutputStreamOperator<JSONObject> process = str2Json.keyBy(jsonObject -> jsonObject.getJSONObject(
+        SingleOutputStreamOperator<String> pageDS = str2Json.keyBy(jsonObject -> jsonObject.getJSONObject(
                 "common").get("mid").toString())
-                .process(new KeyedProcessFunction<String, JSONObject, JSONObject>() {
+                .process(new KeyedProcessFunction<String, JSONObject, String>() {
+
+
                     ValueState<String> valueState;
 
                     @Override
@@ -63,7 +66,7 @@ public class BaseLogApp {
                     }
 
                     @Override
-                    public void processElement(JSONObject value, Context ctx, Collector<JSONObject> out) throws Exception {
+                    public void processElement(JSONObject value, Context ctx, Collector<String> out) throws Exception {
                         String isNew = value.getJSONObject("common").get("is_new").toString();
                         if ("1".equals(isNew)) {
                             if (valueState.value() != null) {
@@ -74,26 +77,32 @@ public class BaseLogApp {
                         }
                         JSONObject start = value.getJSONObject("start");
                         if (start != null) {
-                            ctx.output(startTag, value);
+                            ctx.output(startTag, value.toJSONString());
                         } else {
-                            out.collect(value);
+                            out.collect(value.toJSONString());
                             JSONArray displays = value.getJSONArray("displays");
                             if (displays != null) {
                                 String pageId = value.getJSONObject("page").get("page_id").toString();
                                 for (int i = 0; i < displays.size(); i++) {
                                     JSONObject display = (JSONObject) displays.get(i);
                                     display.put("page_id", pageId);
-                                    ctx.output(displayTag, display);
+                                    ctx.output(displayTag, display.toJSONString());
                                 }
                             }
                         }
                     }
                 });
 
-        process.getSideOutput(startTag).print("start>>>>>>>>>>>>>>>>");
-        process.print("page>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        process.getSideOutput(displayTag).print("display>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        DataStream<String> startDS = pageDS.getSideOutput(startTag);
+        DataStream<String> displayDS =  pageDS.getSideOutput(displayTag);
 
+        startDS.print("startDS>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        pageDS.print("pageDS>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        displayDS.print("displayDS>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+
+        startDS.addSink(MyKafkaUtil.getProducer("dwd_start_log"));
+        pageDS.addSink(MyKafkaUtil.getProducer("dwd_page_log"));
+        displayDS.addSink(MyKafkaUtil.getProducer("dwd_display_log"));
 
         env.execute("BaseLogApp");
 

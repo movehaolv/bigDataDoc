@@ -35,7 +35,7 @@ public class TableTest4_KafkaPipeLine {
         tableEnv.connect(new Kafka()
                 .version("0.11")
                 .topic("sensor")
-//                        .startFromEarliest()
+                        .startFromEarliest()
                 .property("zookeeper.connect", "node01:2181")
                 .property("bootstrap.servers", "node01:9092")
         )
@@ -51,29 +51,29 @@ public class TableTest4_KafkaPipeLine {
         // 简单转换
         Table sensorTable = tableEnv.from("inputTable");
         tableEnv.toAppendStream(sensorTable, Row.class).print("source ");
-        Table resultTable = sensorTable.select("id, temp")
-                .filter("id === 'sensor_6'");
-
-        // 聚合统计
-        Table aggTable = sensorTable.groupBy("id")
-                .select("id, id.count as count, temp.avg as avgTemp");
-
-        // 4. 建立kafka连接，输出到不同的topic下
-        tableEnv.connect(new Kafka()
-                .version("0.11")
-                .topic("sinktest")
-                .property("zookeeper.connect", "node01:2181")
-                .property("bootstrap.servers", "node01:9092")
-        )
-                .withFormat(new Csv())
-                .withSchema(new Schema()
-                        .field("id", DataTypes.STRING())
-//                        .field("timestamp", DataTypes.BIGINT())
-                        .field("temp", DataTypes.DOUBLE())
-                )
-                .createTemporaryTable("outputTable");
-
-        resultTable.insertInto("outputTable");
+//        Table resultTable = sensorTable.select("id, temp")
+//                .filter("id === 'sensor_6'");
+//
+//        // 聚合统计
+//        Table aggTable = sensorTable.groupBy("id")
+//                .select("id, id.count as count, temp.avg as avgTemp");
+//
+//        // 4. 建立kafka连接，输出到不同的topic下
+//        tableEnv.connect(new Kafka()
+//                .version("0.11")
+//                .topic("sinktest")
+//                .property("zookeeper.connect", "node01:2181")
+//                .property("bootstrap.servers", "node01:9092")
+//        )
+//                .withFormat(new Csv())
+//                .withSchema(new Schema()
+//                        .field("id", DataTypes.STRING())
+////                        .field("timestamp", DataTypes.BIGINT())
+//                        .field("temp", DataTypes.DOUBLE())
+//                )
+//                .createTemporaryTable("outputTable");
+//
+//        resultTable.insertInto("outputTable");
 
         env.execute();
     }

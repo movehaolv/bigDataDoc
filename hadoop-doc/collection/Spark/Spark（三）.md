@@ -32,18 +32,35 @@ yarn中的resourceManager相当于master，NodeManager相当于worker，做计�
 &emsp; 1）为什么产生yarn，针对MRV1的各种缺陷提出来的资源管理框架  
 &emsp; 2）解决了什么问题，有什么优势，参考这篇博文：http://www.aboutyun.com/forum.php?mod=viewthread&tid=6785  
 
-### 9、一个task的map数量由谁来决定？  
+### 9、一个task的map数量由谁来决定？
+
+-  读取文件数据时，数据是按照Hadoop 文件读取的规则进行切片分区。
+
+  - <table><tr><td bgcolor=#9ACD32><font color=''>注：电脑cpu=8，sc.makeRDD([1,2],20)=》20个partition文件, sc.textFile(path,20)生成8个partition文件。sc.makeRDD([1,2])=>8个分区文件，sc.textFile(path)=>2个文件 （为什么textFile是这样效果可查看Spark02_RDD_File_Par，应用了如下公式）</font></td></td></table>
+
 &emsp; 一般情况下，在输入源是文件的时候，一个task的map数量由splitSize来决定的  
 &emsp; 那么splitSize是由以下几个来决定的   
 &emsp; &emsp; goalSize = totalSize / mapred.map.tasks  
-&emsp; &emsp; inSize = max {mapred.min.split.size, minSplitSize}  
-&emsp; &emsp; splitSize = max (minSize, min(goalSize, dfs.block.size))  
+&emsp; &emsp; minSize = max {mapred.min.split.size, minSplitSize}  
+&emsp; &emsp; splitSize = max (minSize, min(goalSize, dfs.block.size))  -- 如果goalSize<blocksize,则切片小于blocksize，如果minsize>blocksize，则切片大于blocksize
+
 &emsp; 一个task的reduce数量，由partition决定。  
 
 ### 10、列出你所知道的调度器，说明其工作原理？  
-&emsp; 1）FiFo schedular 默认的调度器  先进先出  
-&emsp; 2）Capacity schedular  计算能力调度器  选择占用内存小  优先级高的  
-&emsp; 3）Fair schedular 调度器  公平调度器  所有job 占用相同资源  
+&emsp; 1）FiFo schedular 默认的调度器  先进先出，单队列，根据提交作业的先后顺序，先来先服务。   
+&emsp; 2）Capacity schedular  容量调度器  多队列，每个队列分配一定容量，采用FIFO调度策略。
+
+资源分配策略：
+
+​	队列资源分配：root节点开始，使用深度优先算法，优先算则资源占用率最低的队列分配资源。
+
+​    调度策略：优先选择资源利用率低的的队列
+
+&emsp; 3）Fair schedular 调度器  公平调度器  同队列所有任务共享资源，获得公平资源
+
+​		资源分配策略：
+
+​			调度策略：优先选择对资源的缺额比例大的（缺额：一个任务应获得资源与实际获得资源的差额）
 
 ### 11、导致Executor产生FULL gc 的原因，可能导致什么问题？  
 &emsp; 可能导致Executor僵死问题，海量数据的shuffle和数据倾斜等都可能导致full gc。以shuffle为例，伴随着大量的Shuffle写操作，JVM的新生代不断GC，

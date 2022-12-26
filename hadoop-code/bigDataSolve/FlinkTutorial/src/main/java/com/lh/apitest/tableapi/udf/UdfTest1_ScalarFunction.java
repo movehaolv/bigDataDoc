@@ -31,13 +31,15 @@ public class UdfTest1_ScalarFunction {
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
         // 1. 读取数据
-        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\bigDataSolve\\FlinkTutorial\\src\\main\\java\\resources\\sensor.txt");
+        DataStream<String> inputStream = env.readTextFile("D:\\workLv\\learn\\proj\\hadoop-code\\bigDataSolve\\FlinkTutorial\\src\\main\\resources\\sensor.txt");
 
         // 2. 转换成POJO
         DataStream<SensorReading> dataStream = inputStream.map(line -> {
             String[] fields = line.split(",");
             return new SensorReading(fields[0], new Long(fields[1]), new Double(fields[2]));
         });
+
+
 
         // 3. 将流转换成表
         Table sensorTable = tableEnv.fromDataStream(dataStream, "id, timestamp as ts, temperature as temp");
@@ -50,6 +52,7 @@ public class UdfTest1_ScalarFunction {
         Table resultTable = sensorTable.select("id, ts, hashCode(id)");
 
         // 4.2 SQL
+
         tableEnv.createTemporaryView("sensor", sensorTable);
         Table resultSqlTable = tableEnv.sqlQuery("select id, ts, hashCode(id) from sensor");
 

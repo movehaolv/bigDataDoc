@@ -1,7 +1,7 @@
 ## Spark面试题（八）——Spark的Shuffle配置调优
 #### 1、Shuffle优化配置 `-spark.shuffle.file.buffer`  
 &emsp; **默认值**：32k  
-&emsp; **参数说明**：该参数用于设置shuffle write task的BufferedOutputStream的buffer缓冲大小。将数据写到磁盘文件之前，会先写入buffer缓冲中，待缓冲写满之后，才会溢写到磁盘。         
+&emsp; **参数说明**：该参数用于设置**shuffle write tas**k的BufferedOutputStream的buffer缓冲大小。将数据写到磁盘文件之前，会先写入buffer缓冲中，待缓冲写满之后，才会溢写到磁盘。         
 &emsp; **调优建议**：如果作业可用的内存资源较为充足的话，可以适当增加这个参数的大小（比如64k），从而减少shuffle write过程中溢写磁盘文件的次数，也就可以减少磁盘IO次数，进而提升性能。在实践中发现，合理调节该参数，性能会有1%~5%的提升。  
 
 #### 2、Shuffle优化配置 `-spark.reducer.maxSizeInFlight`
@@ -21,7 +21,7 @@
 
 #### 5、Shuffle优化配置 `-spark.shuffle.memoryFraction`
 &emsp; **默认值**：0.2  
-&emsp; **参数说明**：该参数代表了Executor内存中，分配给shuffle read task进行聚合操作的内存比例，默认是20%。      
+&emsp; **参数说明**：该参数代表了Executor内存中，分配给**shuffle read task**进行聚合操作的内存比例，默认是20%。      
 &emsp; **调优建议**：在资源参数调优中讲解过这个参数。如果内存充足，而且很少使用持久化操作，建议调高这个比例，给shuffle read的聚合操作更多内存，以避免由于内存不足导致聚合过程中频繁读写磁盘。在实践中发现，合理调节该参数可以将性能提升10%左右。  
 
 #### 6、Shuffle优化配置 `-spark.shuffle.manager`

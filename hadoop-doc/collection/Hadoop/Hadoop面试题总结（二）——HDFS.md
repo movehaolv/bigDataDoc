@@ -19,7 +19,7 @@
 因而，**传输一个由多个块组成的文件的时间取决于磁盘传输速率**。  
 &emsp; 如果寻址时间约为10ms，而传输速率为100MB/s，为了使寻址时间仅占传输时间的1%，我们要将块大小设置约为100MB。默认的块大小128MB。  
 &emsp; 块的大小：10ms×100×100M/s = 100M，如图  
-<img src="https://github.com/wangzhiwubigdata/God-Of-BigData/blob/master/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/pics/Hadoop%E9%9D%A2%E8%AF%95%E9%A2%98Pics/HDFS%E5%9D%97.png"/>  
+<img src="../pics/Hadoop面试题Pics/HDFS文档-Pics/HDFS文件块大小.png"/>  
 &emsp; 增加文件块大小，需要增加磁盘的传输速率。  
 
 ### 6、hadoop的块大小，从哪个版本开始是128M  
@@ -82,8 +82,8 @@ dn1每传一个packet会放入一个应答队列等待应答。
 ### 9、NameNode与SecondaryNameNode 的区别与联系？（☆☆☆☆☆）  
 **机制流程看第7题**  
 1）区别  
-&emsp; （1）NameNode负责管理整个文件系统的元数据，以及每一个路径（文件）所对应的数据块信息。  
-&emsp; （2）SecondaryNameNode主要用于定期合并命名空间镜像和命名空间镜像的编辑日志。  
+&emsp; （1）NameNode负责**管理整个文件系统的元数据**，以及**每一个路径（文件）所对应的数据块信息**。  
+&emsp; （2）SecondaryNameNode主要用于定期合并**命名空间镜像**和命名空间镜像的**编辑日志**。  
 2）联系：  
 &emsp; （1）SecondaryNameNode中保存了一份和namenode一致的镜像文件（fsimage）和编辑日志（edits）。  
 &emsp; （2）在主namenode发生故障时（假设没有及时备份数据），可以从SecondaryNameNode恢复数据。  
@@ -97,21 +97,21 @@ dn1每传一个packet会放入一个应答队列等待应答。
 
 
 架构主要由四个部分组成，分别为**HDFS Client、NameNode、DataNode和Secondary NameNode**。下面我们分别介绍这四个组成部分。  
-1）Client：就是客户端。       
-&emsp; （1）文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行存储；         
+1）**Client**：就是客户端。       
+&emsp; （1） **文件切分**。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行存储；         
 &emsp; （2）与NameNode交互，获取文件的位置信息；  
 &emsp; （3）与DataNode交互，读取或者写入数据；      
 &emsp; （4）Client提供一些命令来管理HDFS，比如启动或者关闭HDFS；  
 &emsp; （5）Client可以通过一些命令来访问HDFS；  
-2）NameNode：就是Master，它是一个主管、管理者。  
+2）**NameNode**：就是Master，它是一个主管、管理者。  
 &emsp; （1）管理HDFS的名称空间；  
 &emsp; （2）管理数据块（Block）映射信息；  
 &emsp; （3）配置副本策略；  
 &emsp; （4）处理客户端读写请求。  
-3）DataNode：就是Slave。NameNode下达命令，DataNode执行实际的操作。  
+3）**DataNode**：就是Slave。NameNode下达命令，DataNode执行实际的操作。  
 &emsp; （1）存储实际的数据块；  
 &emsp; （2）执行数据块的读/写操作。  
-4）Secondary NameNode：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。  
+4）**Secondary** NameNode：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。  
 &emsp; （1）辅助NameNode，分担其工作量；  
 &emsp; （2）定期合并Fsimage和Edits，并推送给NameNode；  
 &emsp; （3）在紧急情况下，可辅助恢复NameNode。  

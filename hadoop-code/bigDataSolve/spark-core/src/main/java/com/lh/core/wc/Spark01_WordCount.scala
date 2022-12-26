@@ -27,7 +27,7 @@ object Spark01_WordCount {
 //        words.foreach(println)
 //        println("------------------")
         // 3. 将数据根据单词进行分组，便于统计
-        //    (hello, hello, hello), (world, world)
+        //    (hello, hello, hello), (world, world)flatMap
         val wordGroup: RDD[(String, Iterable[String])] = words.groupBy(word=>word)
 
         // 4. 对分组后的数据进行转换

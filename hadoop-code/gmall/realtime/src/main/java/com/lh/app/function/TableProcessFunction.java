@@ -17,7 +17,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author: lvhao-004
@@ -48,48 +50,61 @@ public class TableProcessFunction extends BroadcastProcessFunction<JSONObject, S
     @Override
     public void processBroadcastElement(String value, Context ctx, Collector<JSONObject> out) throws Exception {
         // value {db:, tn:, after:{}, before:{}, type:}
-        BroadcastState<String, TableProcess> broadcastState = ctx.getBroadcastState(mapStateDescriptor);
         JSONObject data = JSON.parseObject(value);
-        String key = data.getJSONObject("after").getString("source_table") + "-" + data.getJSONObject("after").getString("operate_type");
-        TableProcess val = JSON.parseObject(data.getString("after"), TableProcess.class);
-        checkTable(data);
-        broadcastState.put(key, val);
+        TableProcess after = JSON.parseObject(data.getString("after"), TableProcess.class);
+        if(TableProcess.SINK_TABLE_HBASE.equals(after.getSink_type())){
+            checkTable(after);
+        }
+        BroadcastState<String, TableProcess> broadcastState = ctx.getBroadcastState(mapStateDescriptor);
+        String key = after.getSource_table() + "-" + after.getOperate_type();
+        System.out.println("需要从TableProcess广播的key >>>>>>>>>>>>>" + key);
+        broadcastState.put(key, after);
     }
 
-    private void checkTable(JSONObject data) throws SQLException {
-        String schema = GmallConfig.HBASE_SCHEMA;
-        String sinkTable = data.getJSONObject("after").getString("sink_table");
-        String sinkPk = data.getString("sink_pk");
-        String[] sinkColumns = data.getJSONObject("after").getString("sink_columns").split(",");
-
-        StringBuilder sbu = new StringBuilder();
-        sbu.append("create table if not exists "  + schema + "." + sinkTable + "(");
-        if(sinkPk==null){
-            sinkPk = "id";
-        }
-
-        for (int i = 0; i < sinkColumns.length; i++) {
-            String col = sinkColumns[i];
-            if(col.equals(sinkPk)){
-                sbu.append(col + " varchar primary key ");
-            }else{
-                sbu.append(col + " varchar ");
-            }
-            if(i<sinkColumns.length-1){
-                sbu.append(",");
-            }
-        }
-        sbu.append(")");
-        String execSql = sbu.toString();
-        System.out.println("Phoenix建表语句>>>>>>>>>>>>>>>>>>>>>>>" + execSql);
+    private void checkTable(TableProcess after) {
         PreparedStatement preparedStatement = null;
         try {
+            String schema = GmallConfig.HBASE_SCHEMA;
+            String sinkTable =  after.getSink_table();
+            String sinkPk = after.getSink_pk();
+            String sinkExtend = after.getSink_extend();
+
+            String[] sinkColumns = after.getSink_columns().split(",");
+
+            StringBuilder sbu = new StringBuilder();
+            sbu.append("create table if not exists "  + schema + "." + sinkTable + "(");
+            if(sinkPk==null){
+                sinkPk = "id";
+            }
+            if (sinkExtend == null) {
+                sinkExtend = "";
+            }
+            for (int i = 0; i < sinkColumns.length; i++) {
+                String col = sinkColumns[i];
+                if(col.equals(sinkPk)){
+                    sbu.append(col + " varchar primary key ");
+                }else{
+                    sbu.append(col + " varchar ");
+                }
+                if(i<sinkColumns.length-1){
+                    sbu.append(",");
+                }
+            }
+            sbu.append(")").append(sinkExtend);
+            String execSql = sbu.toString();
+            System.out.println("Phoenix建表语句>>>>>>>>>>>>>>>>>>>>>>>" + execSql);
+
+
             preparedStatement = connection.prepareStatement(execSql);
             preparedStatement.execute();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }finally {
-            preparedStatement.close();
+            try {
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
 
@@ -104,6 +119,10 @@ public class TableProcessFunction extends BroadcastProcessFunction<JSONObject, S
         String key = value.getString("table") + "-" + value.getString("type");
         ReadOnlyBroadcastState<String, TableProcess> broadcastState = ctx.getBroadcastState(mapStateDescriptor);
         TableProcess tableProcess = broadcastState.get(key);
+        Iterator<Map.Entry<String, TableProcess>> iterator = broadcastState.immutableEntries().iterator();
+        while (iterator.hasNext()){
+            System.out.println("processElement>>>>>>>>>>>>>>" + iterator.next());
+        }
         if(tableProcess!=null){
             filterCols(after, tableProcess.getSink_columns());
             value.put("sinkTable", tableProcess.getSink_table());

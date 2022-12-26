@@ -102,10 +102,13 @@ FileInputFormat源码解析(input.getSplits(job))
 &emsp; &emsp; 如何用Hadoop产生一个全局排序的文件？最简单的方法是使用一个分区。但该方法在处理大型文件时效率极低，因为一台机器必须处理所有输出文件，从而完全丧失了MapReduce所提供的并行架构。  
 &emsp; &emsp; 替代方案：首先创建一系列排好序的文件；其次，串联这些文件；最后，生成一个全局排序的文件。主要思路是使用一个分区来描述输出的全局排序。例如：可以为待分析文件创建3个分区，在第一分区中，记录的单词首字母a-g，第二分区记录单词首字母h-n, 第三分区记录单词首字母o-z。  
 &emsp; （3）辅助排序：（GroupingComparator分组）  
-&emsp; &emsp; Mapreduce框架在记录到达reducer之前按键对记录排序，但键所对应的值并没有被排序。甚至在不同的执行轮次中，这些值的排序也不固定，因为它们来自不同的map任务且这些map任务在不同轮次中完成时间各不相同。一般来说，大多数MapReduce程序会避免让reduce函数依赖于值的排序。但是，有时也需要通过特定的方法对键进行排序和分组等以实现对值的排序。  
+&emsp; &emsp; Mapreduce框架在记录到达reducer之前按键对记录排序，但键所对应的值并没有被排序<font color="red">（可以对值排序，也可以对键重新按照要求排序，辅助排序是针对map后reducer之前的一个排序）</font>。甚至在不同的执行轮次中，这些值的排序也不固定，因为它们来自不同的map任务且这些map任务在不同轮次中完成时间各不相同。一般来说，大多数MapReduce程序会避免让reduce函数依赖于值的排序。但是，有时也需要通过特定的方法对键进行排序和分组等以实现对值的排序。  
+
+辅助排序最后在driver中加入 	**job.setGroupingComparatorClass(OrderGroupingComparator.class);**
+
 &emsp; （4）二次排序：  
 &emsp; &emsp; 在自定义排序过程中，如果compareTo中的判断条件为两个即为二次排序。  
-2）自定义排序WritableComparable  
+2）自定义排序实现 **WritableComparable**  
 &emsp; bean对象实现WritableComparable接口重写compareTo方法，就可以实现排序  
 &emsp; &emsp; @Override  
 &emsp; &emsp; public int compareTo(FlowBean o) {  
@@ -141,7 +144,27 @@ FileInputFormat源码解析(input.getSplits(job))
 
 ### 13、Hadoop的缓存机制（Distributedcache）（☆☆☆☆☆）
 &emsp; 分布式缓存一个最重要的应用就是在进行join操作的时候，如果一个表很大，另一个表很小，我们就可以将这个小表进行广播处理，即每个计算节点上都存一份，然后进行map端的连接操作，经过我的实验验证，这种情况下处理效率大大高于一般的reduce端join，广播处理就运用到了分布式缓存的技术。  
-&emsp; DistributedCache将拷贝缓存的文件到Slave节点在任何Job在节点上执行之前，文件在每个Job中只会被拷贝一次，缓存的归档文件会被在Slave节点中解压缩。将本地文件复制到HDFS中去，接着Client会通过addCacheFile() 和addCacheArchive()方法告诉DistributedCache在HDFS中的位置。当文件存放到文地时，JobClient同样获得DistributedCache来创建符号链接，其形式为文件的URI加fragment标识。当用户需要获得缓存中所有有效文件的列表时，JobConf 的方法 getLocalCacheFiles() 和getLocalArchives()都返回一个指向本地文件路径对象数组。  
+~~&emsp; （DistributedCache将拷贝缓存的文件到Slave节点在任何Job在节点上执行之前，文件在每个Job中只会被拷贝一次，缓存的归档文件会被在Slave节点中解压缩。将本地文件复制到HDFS中去，接着Client会通过addCacheFile() 和addCacheArchive()方法告诉DistributedCache在HDFS中的位置。当文件存放到文地时，JobClient同样获得DistributedCache来创建符号链接，其形式为文件的URI加fragment标识。当用户需要获得缓存中所有有效文件的列表时，JobConf 的方法 getLocalCacheFiles() 和getLocalArchives()都返回一个指向本地文件路径对象数组。  ）~~
+
+- 在driver处
+
+​		`// 6 加载缓存数据`
+
+​		`job.addCacheFile(new URI("file:///e:/input/inputcache/pd.txt"))`
+
+​		`// 7 Map端Join的逻辑不需要Reduce阶段，设置reduceTask数量为0`
+
+​		`job.setNumReduceTasks(0);`
+
+- 在mapper处
+
+  `// 1 获取缓存的文件`
+
+  ​		`URI[] cacheFiles = context.getCacheFiles();`
+
+  ​		`String path = cacheFiles[0].getPath().toString();`
+
+  ​		`BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-8"));`
 
 ### 14、如何使用mapReduce实现两个表的join?（☆☆☆☆☆）
 &emsp; 1）reduce side join : 在map阶段，map函数同时读取两个文件File1和File2，为了区分两种来源的key/value数据对，对每条数据打一个标签（tag）,比如：tag=0 表示来自文件File1，tag=2 表示来自文件File2。  

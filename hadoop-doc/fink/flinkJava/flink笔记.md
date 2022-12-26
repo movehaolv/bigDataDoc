@@ -1,3 +1,7 @@
+##### 看哪些
+
+- hadoop可直接先看collection的hadoop
+
 #### Flink杂记
 
 ##### windowsAll && window(直接看聚合章节)
@@ -18,16 +22,131 @@
     KeyBy Window的并行度，可按Key设置，适用于大数据量。
 ```
 
-##### processElement
+##### Process Function
 
-```java
-// com\atguigu\market_analysis\AdStatisticsByProvince.java
-if( curCount >= countUpperBound ){
-// 判断是否输出到黑名单过，如果没有的话就输出到侧输出流
-		ctx.output( new OutputTag<BlackListUserWarning>("blacklist"){},
-}
-out.collect(value);
-```
+- ProcessFunction
+
+- KeyedProcessFunction （ProcessFunction&KeyedProcessFunction 有OnTimer；ProcessWindowFunction中没有）
+
+  - ```java
+    ds.keyby.process(new KeyedProcessFunction<K,I,O>(){
+        
+       @Override
+       public void processElement(I, Context, Collector<O>)
+       @Override
+       public void onTimer(long timestamp, OnTimerContext ctx, Collector<O> out)
+    })
+    ```
+
+    
+
+- CoProcessFunction
+
+  - 对于两条输入流， DataStream API 提供了 CoProcessFunction 这样的 low-level
+    操作。 CoProcessFunction 提供了操作每一个输入流的方法: processElement1()和
+    processElement2()。  
+
+  - ```java
+    // 关联订单的支付和到账事件
+    orderEventStream.keyBy(OrderEvent::getTxId)
+    .connect(receiptEventStream.keyBy(ReceiptEvent::getTxId))
+    .process(new TxPayMatchDetect());
+    class TxPayMatchDetect extends CoProcessFunction{
+        // 定义状态，保存当前已经到来的订单支付事件和到账时间
+        ValueState<OrderEvent> payState; //  支付事件
+        ValueState<ReceiptEvent> receiptState; // 到账事件状态
+        processElement1(OrderEvent pay, Context ctx, Collector<Tuple2<OrderEvent, ReceiptEvent>> out){
+                // 1. 订单支付事件来了，判断是否已经有对应的到账事件
+                ReceiptEvent receipt = receiptState.value();  // 获取到账事件状态
+                // 2. 如果receipt不为空，说明到账事件已经来过，输出匹配事件，清空两个状态
+                // 3.1 如果receipt没来，注册一个定时器，开始等待
+                  ctx.timerService().registerEventTimeTimer( (pay.getTimestamp() + 5) * 1000L ); 
+                // 3.2 并更新状态
+                payState.update(pay);
+        }
+        processElement2(ReceiptEvent receipt, Context ctx, Collector<Tuple2<OrderEvent, ReceiptEvent>> out){ // 1.到账事件来了，判断是否已经有对应的支付事件
+            OrderEvent pay = payState.value();
+          // 2. 如果pay不为空，说明支付事件已经来过，输出匹配事件，清空两个状态
+          // 3.1如果pay没来，注册一个定时器，开始等待
+            ctx.timerService().registerEventTimeTimer( (receipt.getTimestamp() + 3) * 1000L );
+          // 3.2 并更新状态
+          receiptState.update(receipt);
+        }
+        onTimer(long timestamp, OnTimerContext ctx, Collector<Tuple2<OrderEvent, ReceiptEvent>> out){
+            // 定时器触发，有可能是有一个事件没来，不匹配，也有可能是都来过了，已经输出并清空状态
+            // 判断哪个不为空，那么另一个就没来
+            if( payState.value() != null ) ctx.output(unmatchedPays, payState.value());
+            if( receiptState.value() != null )ctx.output(unmatchedReceipts, receiptState.value());
+            // 清空状态
+            payState.clear();
+            receiptState.clear();  
+        }
+    }
+    ```
+
+    
+
+- ProcessJoinFunction
+
+  - ```java
+    // 作用跟上面的CoProcessFunction一致
+    orderEventStream
+                    .keyBy(OrderEvent::getTxId)
+                    .intervalJoin(receiptEventStream.keyBy(ReceiptEvent::getTxId))
+                    .between(Time.seconds(-3), Time.seconds(5))    // -3，5 区间范围
+                    .process(new TxPayMatchDetectByJoin());
+    class TxPayMatchDetectByJoin extends ProcessJoinFunction<OrderEvent, ReceiptEvent, Tuple2<OrderEvent, ReceiptEvent>>{
+            @Override
+            public void processElement(OrderEvent left, ReceiptEvent right, Context ctx, Collector<Tuple2<OrderEvent, ReceiptEvent>> out) throws Exception {
+                out.collect(new Tuple2<>(left, right));
+            }
+        }                
+    ```
+
+- BroadcastProcessFunction
+
+  - ```java
+    MapStateDescriptor<String, TableProcess> mapStateDescriptor = new MapStateDescriptor<>("map-state", String.class, TableProcess.class);
+    BroadcastStream<String> broadcastStream = tableProcessStrDS.broadcast(mapStateDescriptor);
+    
+    //TODO 5.连接主流和广播流
+    BroadcastConnectedStream<JSONObject, String> connectedStream = odsBaseDbDS.connect(broadcastStream);
+    
+    //TODO 6.分流  处理数据  广播流数据,主流数据(根据广播流数据进行处理)
+    OutputTag<JSONObject> hbaseTag = new OutputTag<JSONObject>("hbase-tag") {};
+    SingleOutputStreamOperator<JSONObject> kafka = connectedStream.process(new TableProcessFunction(hbaseTag, mapStateDescriptor));
+    
+    class TableProcessFunction extends BroadcastProcessFunction<JSONObject, String, JSONObject> {
+        public void processBroadcastElement(String value, Context ctx, Collector<JSONObject> out){
+      //写入状态,广播出去
+     BroadcastState<String,TableProcess> broadcastState = ctx.getBroadcastState(mapStateDescriptor);
+     broadcastState.put(key, tableProcess);
+        }
+    }
+    
+    public void processElement(JSONObject value, ReadOnlyContext ctx, Collector<JSONObject> out){
+        //1.获取状态数据
+        ReadOnlyBroadcastState<String, TableProcess> broadcastState = ctx.getBroadcastState(mapStateDescriptor);
+        TableProcess tableProcess = broadcastState.get(key);
+    }
+    ```
+
+- KeyedBroadcastProcessFunction
+
+- ProcessWindowFunction
+
+  - ```java
+    ds.keyBy("id").timeWindow.process(new ProcessWindowFunction<IN, OUT, KEY, W extends Window>(){
+        @Override
+        public void process(KEY, Context, Iterable<IN>, Collector<OUT>){} 
+    })
+    ```
+
+    
+
+- ProcessAllWindowFunction  
+
+  - .timewindowAll.apply(ProcessAllWindowFunction  )
 
 
 
@@ -71,6 +190,7 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
 .aggregate(new AggregateFunction(), new ProcessWindowFunction()); // ProcessWindowFunction可获取上下文 
 
 单次处理元素
+.keyby('id')
 .process(new KeyedProcessFunction()) // 处理每个元素，底层API  
 <==>
 .timeWindowAll(Time.hours(1))               
@@ -126,6 +246,34 @@ public void onTimer(long timestamp, OnTimerContext ctx, Collector<Integer> out) 
 ```
 
 ##### CEP
+
+- 包含以下组件
+
+  - Event Stream
+
+  - pattern 定义
+
+    - ```java
+      Pattern.<LoginEvent>begin("begin")
+      .where(new SimpleCondition)
+      .next("next")
+      .where(new SimpleCondition)
+      .within(Time.seconds(10)
+      ```
+
+    - followedBy ：非严格近邻； next：严格近邻
+
+  - pattern 检测  
+
+    - patternStream  = CEP.pattern(input, pattern)  
+
+  -  生成 Alert  
+
+    - 一旦获得 PatternStream，我们就可以通过 select 或 flatSelect，从一个 Map 序列
+      找到我们需要的警告信息。 
+      - select： 实现一个 PatternSelectFunction  
+      - flatSelect：实现一个PatternFlatSelectFunction  
+      - 超时事件的处理  ：实现PatternTimeoutFunction 和 PatternFlatTimeoutFunction   
 
 ```java
 // src\main\java\com\atguigu\orderpay_detect\OrderPayTimeout.java
@@ -183,7 +331,7 @@ resultStream.getSideOutput(orderTimeoutTag).print("timeout");
 
 ##### WaterMark
 
-​	WM = 当前时间-乱序时间；当前WM时间下的数据到齐了
+​	WM = 事件时间-乱序时间（**是一种衡量EventTime进展的机制**，用于处理乱序）；当前WM时间下的数据到齐了
 
 - AssignerWithPunctuatedWatermarks（为每条消息都会尝试生成水印）
 
@@ -343,21 +491,116 @@ dataStream.keyBy("id")
 
 ##### 状态编程
 
-```java
-private ValueState<String> dateState;
+- 流式计算分为有状态和无状态
 
-@Override
-public void open(Configuration parameters) throws Exception {
-    ValueStateDescriptor<String> valueStateDescriptor = new ValueStateDescriptor<>("date-state", String.class);
-    //设置状态的超时时间以及更新时间的方式
-    StateTtlConfig stateTtlConfig = new StateTtlConfig
-        .Builder(Time.hours(24))
-        .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
-        .build();
-    valueStateDescriptor.enableTimeToLive(stateTtlConfig);
-    dateState = getRuntimeContext().getState(valueStateDescriptor);
-}
-```
+  - 有状态：过去一小时的平均温度（依赖历史）
+  - 无状态：输出温度大于30度（每个独立事件）
+
+- 有状态算子
+
+  - 如ProcessWindowFunction会缓存输入的数据/ProcessFunction会保存设置的定时器等
+
+  - 主要有2中状态
+
+    - 算子状态
+
+      - 列表状态/联合列表状态/广播状态(一个slot中的所有task都可访问，不同slot不能访问)
+
+    - 键控状态
+
+      - ds.keyBy后，可以在richFunction中使用键控状态
+
+      - ValueState/ListState<K> /MapState<K, V> （具有相同 key 的所有数据都会访问相同的状态 ）
+
+      - 声明：ValueState = getRuntimeContext().getState(new ValueStateDescriptor<Boolean>("is-payed", Boolean.class, false));
+
+      - 状态设置过期
+
+        - ```java
+          private ValueState<String> dateState;
+          
+          @Override
+          public void open(Configuration parameters) throws Exception {
+              ValueStateDescriptor<String> valueStateDescriptor = new ValueStateDescriptor<>("date-state", String.class);
+              //设置状态的超时时间以及更新时间的方式
+              StateTtlConfig stateTtlConfig = new StateTtlConfig
+                  .Builder(Time.hours(24))
+                  .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
+                  .build();
+              valueStateDescriptor.enableTimeToLive(stateTtlConfig);
+              dateState = getRuntimeContext().getState(valueStateDescriptor);
+          }
+          ```
+
+##### 状态一致性
+
+- 一致性级别
+
+  - at-most-once
+
+  - at-least-once
+
+    - 可通过幂等性（一个操作可重复多次，但只有一次导致结果更改）弥补
+
+  - exactly-once
+
+    - spark streaming保证exactly once，代价是只能批处理。flink保证了exactly once，且低延迟高吞吐
+
+    - 通过端到端一致性实现
+
+      - **内部保证** - 依赖checkpoint
+
+      - **source端** - 外部数据源和重设数据的读取位置
+
+      - **sink端** - 保证从故障中恢复时，数据不会重复写入外部系统
+
+        - 幂等写入（flink未采用）：一个操作可重复多次，但只有一次导致结果更改
+
+          1. > HashMap就是典型的幂等写入，为什么flink没采用幂等写入。比如sink端使用redis。我们在大屏检测温度 10,12,15 | 20,21,25(此时还没来得及插入barrier "|"，那么要回退到上一个barrier（15）开始重新输入)  15,20,21,25  虽然reids最终也会收到25，但是大屏显示时候会出现21->15的温度下降，这显然出现问题。故障恢复会出现暂时不一致
+
+        - 事务写入（flink采用）：需要构建事务来写入外部系统，构建的事务对应着 checkpoint，等到 checkpoint真正完成的时候，才把所有对应的结果写入 sink 系统中。  
+
+          - 预写日志（WAL）
+
+            - > 预写日志把数据先保存在sink，待checkpoint完成后再写入，相当于批处理，不是严格实时。并且在最后真正写入sink时候，如果报错，还要重新写入那就会重复
+
+          - <font color='red'>两阶段提交</font>
+
+            - > <font color='red'>具体的两阶段提交步骤总结如下：</font>
+              > 1  第一条数据来了之后，开启一个 kafka 的事务（ transaction），正常写入
+              > kafka 分区日志但标记为未提交，这就是“预提交”
+              > 2  jobmanager 触发 checkpoint 操作， barrier 从 source 开始向下传递，遇到barrier 的算子将状态存入状态后端，并通知 jobmanager
+              > 3  **sink 连接器收到 barrier，保存当前状态，存入 checkpoint，通知**
+              > **jobmanager，并开启下一阶段的事务，用于提交下个检查点的数据**
+              > 4  jobmanager 收到所有任务的通知，发出确认信息，表示 checkpoint 完成
+              > 5  sink 任务收到 jobmanager 的确认信息，正式提交这段时间的数据
+              > 6  外部 kafka 关闭事务，提交的数据可以正常消费了。
+
+              ![image-20221207164914276](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\flink-两阶段提交.png)
+
+    - ![image-20221207151553926](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\flink一致性.png)
+
+##### 检查点
+
+flink内部使用checkpoint保证exactly-once。当checkpoint启动，JM会加入ckpt(checkpoint barriers，类似普通记录，**由算子处理（每个transform任务会触发）**，不参与计算，由JM协调各个TM触发状态**异步保存**)到数据流（env.addsouce()这个环节存入）。
+
+比如 ds.keyBy.map操作,**keyBy算子**会保存输入流kafka的偏移量到flink的状态后端，**map算子** 保存状态到hdfs。如果失败，则["a",2]、 ["a",2]和["c",2]这几条记录将被重播 。
+
+
+
+![image-20221207160630461](../../\collection\pics\FlinkPics\flink-检查点.png)
+
+##### 状态后端
+
+- MemoryStateBackend  
+  - 内存级的状态后端， 会将键控状态作为内存中的对象进行管理，将它们存储
+    在 TaskManager 的 JVM 堆上；而将 checkpoint 存储在 JobManager 的内存中
+- FsStateBackend  
+  - 将 checkpoint 存到远程的持久化文件系统（ FileSystem）上。而对于本地状
+    态，跟 MemoryStateBackend 一样，也会存在 TaskManager 的 JVM 堆上  
+- RocksDBStateBackend  
+  - 将所有状态序列化后，存入本地的 RocksDB 中存储。
+    注意： RocksDB 的支持并不直接包含在 flink 中，需要引入依赖：  
 
 ##### FlinkCDC
 
@@ -416,6 +659,21 @@ class Be{
 
 ```
 
+##### 碎片
+
+ - slot是指TM具有的并发能力
+
+ - 一个taskmanager是一个jvm进程，里面包含了一定数量的slot，这些slot的内存隔离，cpu不隔离
+
+ - 依赖
+
+   	-  one-to-one：map,flatMap (spark的窄依赖)
+      	-  Redistributing  ： keyby,broadcast,rebalance 重分区（spark的宽依赖）
+
+-  Ingestion Time：是数据进入 Flink 的时间。 Processing Time  ：进入算子时间
+
+- - - 
+
 #### 框架比较
 
 ##### SPARK VS FLINK
@@ -438,27 +696,87 @@ Context可以访问元素的时间戳，元素的 key。这是因为keyBy(field)
 
 - 结构
 
-  ```java
-  jobmanager:主节点，类似于spark中的master
+  - jobmanager:主节点，类似于spark中的master
   
-  taskManager：从节点，类似于spark中的worker
+  - taskManager：从节点，类似于spark中的worker
+    - slot：插槽，类似于spark中executor中的线程，只不过flink中的slot是物理存在的，可以手动配置，每个slot执行一个任务，是静态概念，用来隔绝内存。但slot的个数不能多于cpu-cores。并行度上限不能大于slot的数量。
+    - 并行度：一个特定算子的子任务的个数（spark中是RDD中partition的数量）
   
-  slot：插槽，类似于spark中executor中的线程，只不过flink中的slot是物理存在的，可以手动配置，每个slot执行一个任务，是静态概念，用来隔绝内存。但slot的个数不能多于cpu-cores。并行度上限不能大于slot的数量。
-  ```
-
   
 
 ##### MR | SPARK | FLINK
 
-![image-20220529173418419](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\mr-yarn.png)
+###### MR
+
+![image-20220529173418419](../../\collection\pics\FlinkPics\mr-yarn.png)
+
+```java
+//（1） 作业提交 
+第 1 步： Client 调用 job.waitForCompletion 方法，向整个集群提交 MapReduce 作业。
+第 2 步： Client 向 RM 申请一个作业 id。
+第 3 步： RM 给 Client 返回该 job 资源的提交路径和作业 id。
+第 4 步： Client 提交 jar 包、切片信息和配置文件到指定的资源提交路径。
+第 5 步： Client 提交完资源后，向 RM 申请运行 MrAppMaster。
+//（2） 作业初始化
+第 6 步： 当 RM 收到 Client 的请求后，将该 job 添加到容量调度器中。尚硅谷大数据技术之 Hadoop（Yarn）
+第 7 步： 某一个空闲的 NM 领取到该 Job。
+第 8 步： 该 NM 创建 Container， 并产生 MRAppmaster。
+第 9 步：下载 Client 提交的资源到本地。
+//（3） 任务分配
+第 10 步： MrAppMaster 向 RM 申请运行多个 MapTask 任务资源。
+第 11 步： RM 将运行 MapTask 任务分配给另外两个 NodeManager， 另两个 NodeManager
+分别领取任务并创建容器。
+//（4） 任务运行
+第 12 步： MR 向两个接收到任务的 NodeManager 发送程序启动脚本， 这两个
+NodeManager 分别启动 MapTask， MapTask 对数据分区排序。
+第13步： MrAppMaster等待所有MapTask运行完毕后，向RM申请容器， 运行ReduceTask。
+第 14 步： ReduceTask 向 MapTask 获取相应分区的数据。
+第 15 步： 程序运行完毕后， MR 会向 RM 申请注销自己。
+//（5） 进度和状态更新
+YARN 中的任务将其进度和状态(包括 counter)返回给应用管理器, 客户端每秒(通过
+mapreduce.client.progressmonitor.pollinterval 设置)向应用管理器请求进度更新, 展示给用户。
+//（6） 作业完成
+除了向应用管理器请求作业进度外, 客户端每 5 秒都会通过调用 waitForCompletion()来
+检查作业是否完成。 时间间隔可以通过 mapreduce.client.completion.pollinterval 来设置。 作业
+完成之后, 应用管理器和 Container 会清理工作状态。 作业的信息会被作业历史服务器存储
+以备之后用户核查。
+```
+
+###### SPARK
+
+![image-20221206104209723](../../\collection\pics\FlinkPics\spark运行.png)
+
+spark on yarn有两种模式
+
+<strong>Spark Client模式</strong>（01_尚硅谷大数据技术之SparkCore.docx/4.4提交流程）客户端提交程序后，会在客户端上启动Driver，再向RM申请运行AM,RM分配Container运行AM，AM向RM申请Container运行Executor，Executor启动后反向注册Driver，待Executor全部注册后运行main，构建sparkContext，遇到Action触发Job，根据宽依赖划分stage，将taskset发送到Taskscheduler，最后将task分发到各个executor上执行。
+
+<strong>Spark Cluster模</strong> Client提交程序到集群上后，会和RM通讯申请运行AM。<font color='red'>此时AM就是Driver（客户端模式现有Driver再有AM）</font>，官网上说Diver是运行AM里，可以理解为此时AM包含了Driver的功能，既可以进行资源申请，又可以有Driver的RDD生成，Task生成和分发，向AM申请资源接着AM向RM申请资源等。
 
 
 
-![image-20220529173230418](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\spark-yarn.png)
 
-Yarn 框架收到指令后会在指定的 NM 中启动ApplicationMaster；ApplicationMaster 启动 Driver 线程，执行用户的作业；
+
+###### Flink
 
 ![image-20220529163957321](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\flink-yarn.png)
+
+- 文字描述
+  - ​	*Flink 任务提交后， Client 向 HDFS 上传 Flink 的 Jar 包和配置，之后向 Yarn*
+    *ResourceManager 提交任务， ResourceManager 分配 Container 资源并通知对应的*
+    *NodeManager 启动 ApplicationMaster， ApplicationMaster 启动后加载 Flink 的 Jar 包*
+    *和配置构建环境，然后启动 JobManager，之后 ApplicationMaster 向 ResourceManager*
+    *申 请 资 源 启 动 TaskManager ， ResourceManager 分 配 Container 资 源 后 ， 由*
+    *ApplicationMaster 通 知 资 源 所 在 节 点 的 NodeManager 启 动 TaskManager ，*
+    *NodeManager 加载 Flink 的 Jar 包和配置构建环境并启动 TaskManager， TaskManager*
+    *启动后向 JobManager 发送心跳包，并等待 JobManager 向其分配任务。（<font color='blue'>补充TM启动后会向RM注册资源，RM向TM发出提供slots的指令，TM提供slots给JM，JM提交要在slots中执行的任务</font>）*
+
+
+
+###### 共同点
+
+hadoop和spark的yarn都有ApplicationMaster。
+
+hadoop（05_尚硅谷大数据技术之Hadoop（Yarn）V3.3.pdf/1.2 Yarn 工作机制 ），MR程序提交，YarnRunner向RM申请Application，RM返回资源提交路径， MR程序资源提交完毕后，申请运行MRAppMaster，RM分配Container，在NM上启动MRAppMaster，MRAppMaster向RM申请容器运行MapTask/ReduceTask 
 
 #### SQL & TableAPI
 
@@ -1115,3 +1433,96 @@ ProductStats(stt=2022-11-10 18:58:10, edt=2022-11-10 18:58:20, sku_id=23, sku_na
 - 对记录里的item使用IKSegmenter切分出各个关键词
 - 对关键词和窗口分组，统计出窗口下关键词的数量
 
+#### 面试题
+
+##### 14 flink 的 state 是存储在哪里的
+Apache Flink内部有四种state的存储实现，具体如下：
+
+基于内存的HeapStateBackend - 在debug模式使用，不 建议在生产模式下应用；
+基于HDFS的FsStateBackend - 分布式文件持久化，每次读写都产生网络IO，整体性能不佳；
+基于RocksDB的RocksDBStateBackend - 本地文件+异步HDFS持久化；
+基于Niagara(Alibaba内部实现)NiagaraStateBackend - 分布式持久化- 在Alibaba生产环境应用；
+
+##### 15 flink是如何实现反压的
+
+反压（背压）是在实时数据处理中，数据管道某个节点上游产生数据的速度大于该节点处理数据速度的一种现象。
+
+flink的反压经历了两个发展阶段,分别是基于TCP的反压(<1.5)和基于credit的反压(>1.5)
+
+基于 TCP 的反压
+flink中的消息发送通过RS(ResultPartition),消息接收通过IC(InputGate),两者的数据都是以 LocalBufferPool的形式来存储和提取,进一步的依托于Netty的NetworkBufferPool,之后更底层的便是依托于TCP的滑动窗口机制,当IC端的buffer池满了之后,两个task之间的滑动窗口大小便为0,此时RS端便无法再发送数据
+
+基于TCP的反压最大的问题是会造成整个TaskManager端的反压,所有的task都会受到影响
+
+基于 Credit 的反压
+RS与IC之间通过backlog和credit来确定双方可以发送和接受的数据量的大小以提前感知,而不是通过TCP滑动窗口的形式来确定buffer的大小之后再进行反压
+
+定位造成反压问题的节点，通常有两种途径。
+
+- 压监控面板；
+- Flink Task Metrics
+
+处理
+
+- 尝试优化代码；
+- 针对特定资源对Flink进行调优；
+- 增加并发或者增加机器
+
+##### 16 flink中的时间概念 , eventTime 和 processTime的区别
+
+
+
+##### 17 flink中的session Window怎样使用
+会话窗口主要是将某段时间内活跃度较高的数据聚合成一个窗口进行计算,窗口的触发条件是 Session Gap, 是指在规定的时间内如果没有数据活跃接入,则认为窗口结束,然后触发窗口结果
+
+Session Windows窗口类型比较适合非连续性数据处理或周期性产生数据的场景,根据用户在线上某段时间内的活跃度对用户行为进行数据统计
+
+val sessionWindowStream = inputStream
+.keyBy(_.id)
+//使用EventTimeSessionWindow 定义 Event Time 滚动窗口
+.window(EventTimeSessionWindow.withGap(Time.milliseconds(10)))
+.process(......)
+Session Window 本质上没有固定的起止时间点,因此底层计算逻辑和Tumbling窗口及Sliding 窗口有一定的区别,
+
+Session Window 为每个进入的数据都创建了一个窗口,最后再将距离窗口Session Gap 最近的窗口进行合并,然后计算窗口结果
+
+
+
+##### 18 讲一下flink on yarn的部署
+Flink作业提交有两种类型:
+
+- Session-cluster 模式：  
+  - 需要先启动集群，然后再提交作业，接着会向 yarn 申请一
+    块空间后，资源永远保持不变。如果资源满了，下一个作业就无法提交，只能等到
+    yarn 中的其中一个作业执行完成后，释放了资源，下个作业才会正常提交。所有作
+    业共享 Dispatcher 和 ResourceManager；共享资源；适合规模小执行时间短的作业。
+    在 yarn 中初始化一个 flink 集群，开辟指定的资源，以后提交任务都向这里提
+    交。这个 flink 集群会常驻在 yarn 集群中，除非手工停止。  
+
+- Per-Job-Cluster 模式  
+  - 一个 Job 会对应一个集群，每提交一个作业会根据自身的情况，都会单独向 yarn
+    申请资源，直到作业执行完成，一个作业的失败与否并不会影响下一个作业的正常
+    提交和运行。独享 Dispatcher 和 ResourceManager，按需接受资源申请；适合规模大
+    长时间运行的作业。
+    每次提交都会创建一个新的 flink 集群，任务之间互相独立，互不影响，方便管
+    理。任务执行完成之后创建的集群也会消失  
+
+##### 19 flink 的 window 实现机制
+
+Flink 中定义一个窗口主要需要以下三个组件。
+
+- **Window Assigner：**用来决定某个元素被分配到哪个/哪些窗口中去。
+- **Trigger：**触发器。决定了一个窗口何时能够被计算或清除，每个窗口都会拥有一个自己的Trigger。
+- **Evictor：**可以译为“驱逐者”。在Trigger触发之后，在窗口被处理之前，Evictor（如果有Evictor的话）会用来剔除窗口中不需要的元素，相当于一个filter。
+
+Window 的实现
+
+首先上图中的组件都位于一个算子（window operator）中，数据流源源不断地进入算子，每一个到达的元素都会被交给 WindowAssigner。WindowAssigner 会决定元素被放到哪个或哪些窗口（window），可能会创建新窗口。因为一个元素可以被放入多个窗口中，所以同时存在多个窗口是可能的。注意，`Window`本身只是一个ID标识符，其内部可能存储了一些元数据，如`TimeWindow`中有开始和结束时间，但是并不会存储窗口中的元素。窗口中的元素实际存储在 Key/Value State 中，key为`Window`，value为元素集合（或聚合值）。为了保证窗口的容错性，该实现依赖了 Flink 的 State 机制（参见 [state 文档](https://ci.apache.org/projects/flink/flink-docs-master/apis/streaming/state.html)）。
+
+每一个窗口都拥有一个属于自己的 Trigger，Trigger上会有定时器，用来决定一个窗口何时能够被计算或清除。每当有元素加入到该窗口，或者之前注册的定时器超时了，那么Trigger都会被调用。Trigger的返回结果可以是 continue（不做任何操作），fire（处理窗口数据），purge（移除窗口和窗口中的数据），或者 fire + purge。一个Trigger的调用结果只是fire的话，那么会计算窗口并保留窗口原样，也就是说窗口中的数据仍然保留不变，等待下次Trigger fire的时候再次执行计算。一个窗口可以被重复计算多次直到它被 purge 了。在purge之前，窗口会一直占用着内存。
+
+当Trigger fire了，窗口中的元素集合就会交给`Evictor`（如果指定了的话）。Evictor 主要用来遍历窗口中的元素列表，并决定最先进入窗口的多少个元素需要被移除。剩余的元素会交给用户指定的函数进行窗口的计算。如果没有 Evictor 的话，窗口中的所有元素会一起交给函数进行计算。
+
+计算函数收到了窗口的元素（可能经过了 Evictor 的过滤），并计算出窗口的结果值，并发送给下游。窗口的结果值可以是一个也可以是多个。DataStream API 上可以接收不同类型的计算函数，包括预定义的`sum()`,`min()`,`max()`，还有 `ReduceFunction`，`FoldFunction`，还有`WindowFunction`。WindowFunction 是最通用的计算函数，其他的预定义的函数基本都是基于该函数实现的。
+
+Flink 对于一些聚合类的窗口计算（如sum,min）做了优化，因为聚合类的计算不需要将窗口中的所有数据都保存下来，只需要保存一个result值就可以了。每个进入窗口的元素都会执行一次聚合函数并修改result值。这样可以大大降低内存的消耗并提升性能。但是如果用户定义了 Evictor，则不会启用对聚合窗口的优化，因为 Evictor 需要遍历窗口中的所有元素，必须要将窗口中所有元素都存下来。

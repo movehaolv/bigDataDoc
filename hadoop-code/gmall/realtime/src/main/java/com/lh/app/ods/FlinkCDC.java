@@ -5,6 +5,7 @@ import com.alibaba.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.alibaba.ververica.cdc.debezium.DebeziumSourceFunction;
 import com.lh.app.function.CustomerDeserialization;
 import com.lh.utils.MyKafkaUtil;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -26,8 +27,8 @@ public class FlinkCDC {
                 .username("root")
                 .password("000000")
                 .databaseList("gmall2021")
-                .tableList("gmall2021.base_trademark, gmall2021.order_info")
-                .startupOptions(StartupOptions.initial())
+//                .tableList("gmall2021.base_trademark, gmall2021.order_info")
+//                .startupOptions(StartupOptions.latest())
                 .deserializer(new CustomerDeserialization())
                 .build();
 
@@ -35,7 +36,7 @@ public class FlinkCDC {
 
         source.print();
         source.addSink(MyKafkaUtil.getProducer("ods_base_db"));
-
+//        source.writeAsText("D:\\workLv\\learn\\proj\\hadoop-code\\gmall\\realtime\\src\\main\\resources\\test.sql", FileSystem.WriteMode.OVERWRITE);
         env.execute("flinkTest");
 
 

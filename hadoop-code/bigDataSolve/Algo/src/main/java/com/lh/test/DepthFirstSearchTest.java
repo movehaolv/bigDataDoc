@@ -43,7 +43,7 @@ public class DepthFirstSearchTest {
 
 
         // 获取深度优先路径 -- 添加功能
-        search.dfsPath().forEach(ele -> System.out.print(ele + "  "));
+//        search.dfsPath().forEach(ele -> System.out.print(ele + "  "));
 
     }
 }

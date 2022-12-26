@@ -81,11 +81,16 @@ spark官网建议task个数为CPU的核数*executor的个数的2~3倍。
 ### 10、使用scala代码实现WordCount？  
 &emsp; val conf = new SparkConf()   
 &emsp; val sc = new SparkContext(conf)   
-&emsp; val line = sc.textFile("xxxx.txt") line.flatMap(_.split(" ")).map((_,1)).reduceByKey(_+_). collect().foreach(println) sc.stop()  
+     val line:RDD[String] = sc.textFile("xxxx.txt")
+
+​    val flatRDD:RDD[String] = line.flatMap(_.split(" "))
+
+​    val mapRDD: RDD[(String, Int)] = map((_,1))
+
+​     mapRDD.reduceByKey(_+_). collect().foreach(println) sc.stop()  
 
 ### 11、Spark RDD 和 MapReduce2的区别？  
-&emsp; 1）mr2只有2个阶段，数据需要大量访问磁盘，数据来源相对单一 ,spark RDD ,可以无数个阶段进行迭代计算，数据来源非常丰富，数据落地介质也
-非常丰富spark计算基于内存；  
+&emsp; 1）mr2只有2个阶段，数据需要大量访问磁盘，数据来源相对单一 ,spark RDD ,可以无数个阶段进行迭代计算，数据来源非常丰富，数据落地介质也非常丰富（shuffle时候会落地），spark计算基于内存(task分发到executor中，可直接读取内存计算)；  
 &emsp; 2）MapReduce2需要频繁操作磁盘IO，需要大家明确的是如果是SparkRDD的话，你要知道每一种数据来源对应的是什么，RDD从数据源加载数据，
 将数据放到不同的partition针对这些partition中的数据进行迭代式计算计算完成之后，落地到不同的介质当中。  
 

@@ -4,44 +4,62 @@ package com.lh.test;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
+import java.util.Queue;
 
 public class LvTest {
     public static void main(String[] args) {
-        System.out.println(LvTest.class.getClassLoader().getResource("road_find.txt").getPath());
+
+        int[] nums = {7,1,5,3,6,4};
+        new Solution().insertSort(nums);
+        System.out.println(Arrays.toString(nums));
+
     }
 }
 
-
-// [0,1,2,4,4,4,5,6,6,7] [4,5,6,6,7,0,1,2,4,4]
 class Solution {
-    public int search(int[] nums, int target) {
-        int len = nums.length;
-        if (len == 0) {
-            return -1;
-        }
-        int l = 0;
-        int r = len - 1;
-        while (l <= r) {
-            int mid = (l + r) / 2;
-            if (nums[mid] == target) {
-                return mid;
-            }
-            if (nums[0] <= nums[mid]) { // 有序部分为前半段，在前半段判断  0也可以用l替代
-                if (nums[0] <= target && target < nums[mid]) {
-                    r = mid - 1;
-                } else {
-                    l = mid + 1;
-                }
-            } else { // 有序部分为后半段，在后半段判断
-                if (target > nums[mid] && target <= nums[len - 1]) {  // len-1 可以用r替代
-                    l = mid + 1;
-                } else {
-                    r = mid - 1;
+    public void bubbleSort(int[] nums){
+        for(int i=1;i<=nums.length-1;i++){
+            for(int j=0;j<=nums.length-1-i;j++){
+                if(nums[j]>nums[j+1]){
+                    swap(j, j+1, nums);
                 }
             }
         }
-        return -1;
+    }
+
+
+    public void selectSort(int[] nums){
+        for(int i=0;i<=nums.length-2;i++){
+            int min=i;
+            for(int j=i+1;j<nums.length;j++){
+                if(nums[j]<nums[min]){
+                    min = j;
+                }
+            }
+            swap(i, min, nums);
+        }
+    }
+
+
+    public void insertSort(int[] nums){
+        for(int i=1;i<nums.length;i++){
+            for(int j=i;j>0;j--){
+                if(nums[j]<nums[j-1]){
+                    swap(j, j-1, nums);
+                }else{
+                    break;
+                }
+            }
+        }
+    }
+
+    private void swap(int i, int j, int[]nums){
+        int tmp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = tmp;
     }
 }
+

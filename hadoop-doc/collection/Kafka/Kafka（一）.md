@@ -4,7 +4,7 @@
 &emsp; 高吞吐量、低延迟：kafka每秒可以处理几十万条消息，它的延迟最低只有几毫秒，每个topic可以分多个partition, consumer group 对partition进行consume操作。  
 &emsp; 可扩展性：kafka集群支持热扩展  
 &emsp; 持久性、可靠性：消息被持久化到本地磁盘，并且支持数据备份防止数据丢失  
-&emsp; 容错性：允许集群中节点失败（若副本数量为n,则允许n-1个节点失败）  
+&emsp; 容错性：允许集群中节点失败（若副本数量为n,则允许n-1个节点失败，因为剩余的最后一个副本(follower)可作为leader）  
 &emsp; 高并发：支持数千个客户端同时读写  
 
 ### 2、请简述下你在哪些场景下会选择 Kafka？  
@@ -63,7 +63,7 @@ Kafka 架构分为以下几个部分：
 &emsp; 如果我们要往 Kafka 对应的主题发送消息，我们需要通过 Producer 完成。前面我们讲过 Kafka 主题对应了多个分区，每个分区下面又对应了多个副本；为了让用户设置数据可靠性， Kafka 在 Producer 里面提供了消息确认机制。也就是说我们可以通过配置来决定消息发送到对应分区的几个副本才算消息发送成功。可以在定义 Producer 时通过 acks 参数指定（在 0.8.2.X 版本之前是通过 request.required.acks 参数设置的）。  
 &emsp; 这个参数支持以下三种值：  
 &emsp; acks = 0：producer 不等待 broker 的 ack，这一操作提供了一个最低的延迟， broker 一接收到还没有写入磁盘就已经返回，当 broker 故障时有可能丢失数据；    
-&emsp; acks = 1：producer 等待 broker 的 ack， partition 的 leader 落盘成功后返回 ack，如果在 follower同步成功之前 leader 故障，那么将会丢失数据；  
+&emsp; acks = 1：producer 等待 broker 的 ack， partition 的 leader 落盘成功后返回 ack，如果在 follower同步成功之前 leader 故障，那么将会丢失数据；  （如果落盘成功后，还没返回ack，此时已经同步，broker坏了，选取新的leader后会重复，但应该不用考虑，ack反应比同步快-lh仅供参考）
 &emsp; acks = all：producer 等待 broker 的 ack， partition 的 leader 和 follower 全部落盘成功后才返回 ack。但是如果在 follower 同步完成后， broker 发送 ack 之前， leader 发生故障，那么会造成数据重复  。  
 &emsp; 根据实际的应用场景，我们设置不同的 acks，以此保证数据的可靠性。  
 &emsp; 另外，Producer 发送消息还可以选择同步（默认，通过 producer.type=sync 配置） 或者异步（producer.type=async）模式。如果设置成异步，虽然会极大的提高消息发送的性能，但是这样会增加丢失数据的风险。如果需要确保消息的可靠性，必须将 producer.type 设置为 sync。  
@@ -132,7 +132,15 @@ Kafka 架构分为以下几个部分：
 &emsp; 在Kafka中，当有新消费者加入或者订阅的topic数发生变化时，会触发Rebalance(再均衡：在同一个消费者组当中，分区的所有权从一个消费者转移到另外一个消费者)机制，Rebalance顾名思义就是重新均衡消费者消费。Rebalance的过程如下：  
 &emsp; 第一步：所有成员都向coordinator发送请求，请求入组。一旦所有成员都发送了请求，coordinator会从中选择一个consumer担任leader的角色，并把组成员信息以及订阅信息发给leader。  
 &emsp; 第二步：leader开始分配消费方案，指明具体哪个consumer负责消费哪些topic的哪些partition。一旦完成分配，leader会将这个方案发给coordinator。coordinator接收到分配方案之后会把方案发给各个consumer，这样组内的所有成员就都知道自己应该消费哪些分区了。  
-&emsp; 所以对于Rebalance来说，Coordinator起着至关重要的作用。  
+&emsp; 所以对于Rebalance来说，Coordinator起着至关重要的作用。
+
+coordinator  
+
+kafka提供了一个角色,coordinator来执行对于consumer group的管理,当consumer group的第一个consumer启动的时候，它会去和kafka server确定谁是它们组的coordinator。之后该group内的所有成员都会和该coordinator进行协调通信、
+
+如何确定coordinator
+consumer group如何确定自己的coordinator是谁呢, 消费者向kafka集群中的任意一个broker发送一个
+GroupCoordinatorRequest请求，服务端会返回一个负载最小的broker节点的id，并将该broker设置为coordinator
 
 ### 16、Kafka分区分配策略  
 <p align="center">
@@ -140,6 +148,7 @@ Kafka 架构分为以下几个部分：
 <p align="center">
 </p>
 </p>  
+同一个组内的不同消费者不能同时消费同一个分区，但能订阅多个topic
 
 &emsp; 在 Kafka 内部存在两种默认的分区分配策略：Range 和 RoundRobin。当以下事件发生时，Kafka 将会进行一次分区分配：  
 &emsp; 1）同一个 Consumer Group 内新增消费者  

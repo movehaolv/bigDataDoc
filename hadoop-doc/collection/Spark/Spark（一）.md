@@ -65,7 +65,16 @@ DAGScheduler 根据 RDD 的血缘关系构成的 DAG 进行切分，将一个Job
 ⑤ SparkContext就建成DAG图，DAGScheduler将DAG图解析成Stage，每个Stage有多个task，形成taskset发送给task Scheduler，由task Scheduler将Task发送给Executor运行
 ⑥ Task在Executor上运行，运行完释放所有资源
 
+### 4.1 运行架构
+
+Spark 框架的核心是一个计算引擎，整体来说，它采用了标准 master-slave 的结构。如下图所示，它展示了一个 Spark 执行时的基本结构。图形中的Driver 表示 master，
+
+负责管理整个集群中的作业任务调度。图形中的Executor 则是 slave，负责实际执行任务。
+
+![image-20221203143318160](D:\workLv\learn\proj\hadoop-doc\collection\pics\FlinkPics\spark运行架构.png)
+
 ### 5、spark的优化怎么做？ （☆☆☆☆☆）  
+
 &emsp; spark调优比较复杂，但是大体可以分为三个方面来进行  
 &emsp; 1）平台层面的调优：防止不必要的jar包分发，提高数据的本地性，选择高效的存储格式如parquet  
 &emsp; 2）应用程序层面的调优：过滤操作符的优化降低过多小任务，降低单条记录的资源开销，处理数据倾斜，复用RDD进行缓存，作业并行化执行等等  
@@ -118,7 +127,6 @@ DAGScheduler 根据 RDD 的血缘关系构成的 DAG 进行切分，将一个Job
 <p align="center">
 </p>
 </p>  
-
 &emsp; 1）客户端client向ResouceManager提交Application，ResouceManager接受Application并根据集群资源状况选取一个node来启动Application的任务调度器driver（ApplicationMaster）。  
 &emsp; 2）ResouceManager找到那个node，命令其该node上的nodeManager来启动一个新的 JVM进程运行程序的driver（ApplicationMaster）部分，driver（ApplicationMaster）启动时会首先向ResourceManager注册，说明由自己来负责当前程序的运行。  
 &emsp; 3）driver（ApplicationMaster）开始下载相关jar包等各种资源，基于下载的jar等信息决定向ResourceManager申请具体的资源内容。  
@@ -182,3 +190,143 @@ DAGScheduler 根据 RDD 的血缘关系构成的 DAG 进行切分，将一个Job
 &emsp; 传统内存管理的不足：  
 &emsp; 1）Shuffle占用内存0.2*0.8，内存分配这么少，可能会将数据spill到磁盘，频繁的磁盘IO是很大的负担，Storage内存占用0.6，主要是为了迭代处理。传统的Spark内存分配对操作人的要求非常高。（Shuffle分配内存：ShuffleMemoryManager, TaskMemoryManager, ExecutorMemoryManager）一个Task获得全部的Execution的Memory，其他Task过来就没有内存了，只能等待；  
 &emsp; 2）默认情况下，Task在线程中可能会占满整个内存，分片数据
+
+
+
+Spark1.6 之后引入的统一内存管理机制，与静态内存管理的区别在于存储内存和执行内存共享同一块空间，可以动态占用对方的空闲区域
+
+### 23 RDD懒加载是什么意思
+
+Transformation 操作是延迟计算的，也就是说从一个RDD 转换生成另一个 RDD 的转换操作不是马上执行，需要等到有 Acion 操作的时候才会真正触发运算,这也就是懒加载.
+
+### 24 spark有哪几种join
+
+**Spark 中和 join 相关的算子有这几个**：`join`、`fullOuterJoin`、`leftOuterJoin`、`rightOuterJoin`
+
+- **join**
+
+  join函数会输出两个RDD中key相同的所有项，并将它们的value联结起来，它联结的key要求在两个表中都存在，类似于SQL中的INNER JOIN。但它不满足交换律，a.join(b)与b.join(a)的结果不完全相同，值插入的顺序与调用关系有关。
+
+- **leftOuterJoin**
+
+  leftOuterJoin会保留对象的所有key，而用None填充在参数RDD other中缺失的值，因此调用顺序会使结果完全不同。如下面展示的结果，
+
+- **rightOuterJoin**
+
+  rightOuterJoin与leftOuterJoin基本一致，区别在于它的结果保留的是参数other这个RDD中所有的key。
+
+- **fullOuterJoin**
+
+  fullOuterJoin会保留两个RDD中所有的key，因此所有的值列都有可能出现缺失的情况，所有的值列都会转为Some对象。
+
+### 25 spark的stage是如何划分的
+
+stage的划分依据就是看是否产生了shuflle(即宽依赖),遇到一个shuffle操作就划分为前后两个stage
+
+### 26 spark2.0为什么放弃了akka 而用netty
+
+1. 很多Spark用户也使用Akka，但是由于Akka不同版本之间无法互相通信，这就要求用户必须使用跟Spark完全一样的Akka版本，导致用户无法升级Akka。
+2. Spark的Akka配置是针对Spark自身来调优的，可能跟用户自己代码中的Akka配置冲突。
+3. Spark用的Akka特性很少，这部分特性很容易自己实现。同时，这部分代码量相比Akka来说少很多，debug比较容易。如果遇到什么bug，也可以自己马上fix，不需要等Akka上游发布新版本。而且，Spark升级Akka本身又因为第一点会强制要求用户升级他们使用的Akka，对于某些用户来说是不现实的。
+
+
+
+### 27 spark的内存管理机制,spark 1.6前后分析对比, spark2.0 做出来哪些优化
+
+**spark的内存结构分为3大块:storage/execution/系统自留**
+
+- **storage 内存**：用于缓存 RDD、展开 partition、存放 Direct Task Result、存放广播变量。在 Spark Streaming receiver 模式中，也用来存放每个 batch 的 blocks
+- **execution 内存**：用于 shuffle、join、sort、aggregation 中的缓存、buffer
+- **系统自留**:
+  - 在 spark 运行过程中使用：比如序列化及反序列化使用的内存，各个对象、元数据、临时变量使用的内存，函数调用使用的堆栈等
+  - 作为误差缓冲：由于 storage 和 execution 中有很多内存的使用是估算的，存在误差。当 storage 或 execution 内存使用超出其最大限制时，有这样一个安全的误差缓冲在可以大大减小 OOM 的概率
+
+1.6版本以前的问题
+
+- 旧方案最大的问题是 storage 和 execution 的内存大小都是固定的，不可改变，即使 execution 有大量的空闲内存且 storage 内存不足，storage 也无法使用 execution 的内存，只能进行 spill，反之亦然。所以，在很多情况下存在资源浪费
+- 旧方案中，只有 execution 内存支持 off heap，storage 内存不支持 off heap
+
+新方案的改进
+
+- 新方案 storage 和 execution 内存可以互相借用，当一方内存不足可以向另一方借用内存，提高了整体的资源利用率
+- 新方案中 execution 内存和 storage 内存均支持 off heap
+
+### 28 Spark中的算子都有哪些
+
+总的来说,spark分为两大类算子:
+
+- **Transformation 变换/转换算子：这种变换并不触发提交作业，完成作业中间过程处理**
+
+  Transformation 操作是延迟计算的，也就是说从一个RDD 转换生成另一个 RDD 的转换操作不是马上执行，需要等到有 Action 操作的时候才会真正触发运算
+
+- **Action 行动算子：这类算子会触发 SparkContext 提交 Job 作业**
+
+  Action 算子会触发 Spark 提交作业（Job），并将数据输出 Spark系统
+
+  ------
+
+1. Value数据类型的Transformation算子
+
+- 输入分区与输出分区一对一型
+  - map算子
+  - flatMap算子
+  - mapPartitions算子
+  - glom算子
+- 输入分区与输出分区多对一型
+  - union算子
+  - cartesian算子
+- 输入分区与输出分区多对多型
+  - grouBy算子
+- 输出分区为输入分区子集型
+  - filter算子
+  - distinct算子
+  - subtract算子
+  - sample算子
+  - takeSample算子
+- Cache型
+  - cache算子
+  - persist算子
+
+2. Key-Value数据类型的Transfromation算子
+
+- 输入分区与输出分区一对一
+  - mapValues算子
+- 对单个RDD或两个RDD聚集
+  - combineByKey算子
+  - reduceByKey算子
+  - partitionBy算子
+  - Cogroup算子
+- 连接
+  - join算子
+  - leftOutJoin 和 rightOutJoin算子
+
+3. Action算子
+
+- 无输出
+  - foreach算子
+- HDFS算子
+  - saveAsTextFile算子
+  - saveAsObjectFile算子
+- Scala集合和数据类型
+  - collect算子
+  - collectAsMap算子
+  - reduceByKeyLocally算子
+  - lookup算子
+  - count算子
+  - top算子
+  - reduce算子
+  - fold算子
+  - aggregate算子
+  - countByValue
+  - countByKey
+
+### 29 spark运行原理,从提交一个jar到最后返回结果,整个过程
+
+1. `spark-submit` 提交代码，执行 `new SparkContext()`，在 SparkContext 里构造 `DAGScheduler` 和 `TaskScheduler`。
+2. TaskScheduler 会通过后台的一个进程，连接 Master，向 Master 注册 Application。
+3. Master 接收到 Application 请求后，会使用相应的资源调度算法，在 Worker 上为这个 Application 启动多个 Executer。
+4. Executor 启动后，会自己反向注册到 TaskScheduler 中。 所有 Executor 都注册到 Driver 上之后，SparkContext 结束初始化，接下来往下执行我们自己的代码。
+5. 每执行到一个 Action，就会创建一个 Job。Job 会提交给 DAGScheduler。
+6. DAGScheduler 会将 Job划分为多个 stage，然后每个 stage 创建一个 TaskSet。
+7. TaskScheduler 会把每一个 TaskSet 里的 Task，提交到 Executor 上执行。
+8. Executor 上有线程池，每接收到一个 Task，就用 TaskRunner 封装，然后从线程池里取出一个线程执行这个 task。(TaskRunner 将我们编写的代码，拷贝，反序列化，执行 Task，每个 Task 执行 RDD 里的一个 partition)

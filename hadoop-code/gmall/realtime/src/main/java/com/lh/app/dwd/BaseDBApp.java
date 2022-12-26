@@ -40,7 +40,7 @@ public class BaseDBApp {
 
         // 读取kafka的数据 ods_base_db
         FlinkKafkaConsumer<String> consumer = MyKafkaUtil.getConsumer("ods_base_db", "odsBaseDBApp");
-//        mainDs.print();
+//        不存在
 
         SingleOutputStreamOperator<JSONObject> mainDs = env.addSource(consumer).map(JSON::parseObject)
                 .filter(new FilterFunction<JSONObject>() {
